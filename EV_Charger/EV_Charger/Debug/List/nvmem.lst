@@ -1,0 +1,413 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           12/Dec/2016  09:55:04
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\CC3000HostDriver\nvmem.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\CC3000HostDriver\nvmem.c -D MDNS_ADVERTISE_HOST
+#        -D CC3000_UNENCRYPTED_SMART_CONFIG -lcN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ --diag_suppress Pa039 -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h"
+#        --library_module -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\nvmem.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\nvmem.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\CC3000HostDriver\nvmem.c
+      1          /*****************************************************************************
+      2          *
+      3          *  nvmem.c  - CC3000 Host Driver Implementation.
+      4          *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
+      5          *
+      6          *  Redistribution and use in source and binary forms, with or without
+      7          *  modification, are permitted provided that the following conditions
+      8          *  are met:
+      9          *
+     10          *    Redistributions of source code must retain the above copyright
+     11          *    notice, this list of conditions and the following disclaimer.
+     12          *
+     13          *    Redistributions in binary form must reproduce the above copyright
+     14          *    notice, this list of conditions and the following disclaimer in the
+     15          *    documentation and/or other materials provided with the   
+     16          *    distribution.
+     17          *
+     18          *    Neither the name of Texas Instruments Incorporated nor the names of
+     19          *    its contributors may be used to endorse or promote products derived
+     20          *    from this software without specific prior written permission.
+     21          *
+     22          *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+     23          *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+     24          *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+     25          *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+     26          *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+     27          *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+     28          *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     29          *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+     30          *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+     31          *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+     32          *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     33          *
+     34          *****************************************************************************/
+     35          
+     36          //*****************************************************************************
+     37          //
+     38          //! \addtogroup nvmem_api
+     39          //! @{
+     40          //
+     41          //*****************************************************************************
+     42          
+     43          #include <stdio.h>
+     44          #include <string.h>
+     45          #include "nvmem.h"
+     46          #include "hci.h"
+     47          #include "socket.h"
+     48          #include "evnt_handler.h"
+     49          
+     50          //*****************************************************************************
+     51          //
+     52          // Prototypes for the structures for APIs.
+     53          //
+     54          //*****************************************************************************
+     55          
+     56          #define NVMEM_READ_PARAMS_LEN 	(12)
+     57          #define NVMEM_CREATE_PARAMS_LEN 	(8)
+     58          #define NVMEM_WRITE_PARAMS_LEN  (16)
+     59          
+     60          //*****************************************************************************
+     61          //
+     62          //!  nvmem_read
+     63          //!
+     64          //!  @param  ulFileId   nvmem file id:\n
+     65          //!                     NVMEM_NVS_FILEID, NVMEM_NVS_SHADOW_FILEID,
+     66          //!                     NVMEM_WLAN_CONFIG_FILEID, NVMEM_WLAN_CONFIG_SHADOW_FILEID,
+     67          //!                     NVMEM_WLAN_DRIVER_SP_FILEID, NVMEM_WLAN_FW_SP_FILEID,
+     68          //!                     NVMEM_MAC_FILEID, NVMEM_FRONTEND_VARS_FILEID,
+     69          //!                     NVMEM_IP_CONFIG_FILEID, NVMEM_IP_CONFIG_SHADOW_FILEID,
+     70          //!                     NVMEM_BOOTLOADER_SP_FILEID, NVMEM_RM_FILEID,
+     71          //!                     and user files 12-15.
+     72          //!  @param  ulLength    number of bytes to read 
+     73          //!  @param  ulOffset    ulOffset in file from where to read  
+     74          //!  @param  buff        output buffer pointer
+     75          //!
+     76          //!  @return       on success 0, error otherwise.
+     77          //!
+     78          //!  @brief       Reads data from the file referred by the ulFileId parameter. 
+     79          //!               Reads data from file ulOffset till length. Err if the file can't
+     80          //!               be used, is invalid, or if the read is out of bounds. 
+     81          //!	 
+     82          //*****************************************************************************
+     83          
+     84          INT32 nvmem_read(UINT32 ulFileId, UINT32 ulLength, UINT32 ulOffset, UINT8 *buff)
+     85          {
+     86          	UINT8 ucStatus = 0xFF;
+     87          	UINT8 *ptr;
+     88          	UINT8 *args;
+     89          
+     90          	ptr = tSLInformation.pucTxCommandBuffer;
+     91          	args = (ptr + HEADERS_SIZE_CMD);
+     92          
+     93          	// Fill in HCI packet structure
+     94          	args = UINT32_TO_STREAM(args, ulFileId);
+     95          	args = UINT32_TO_STREAM(args, ulLength);
+     96          	args = UINT32_TO_STREAM(args, ulOffset);
+     97          
+     98          	// Initiate a HCI command
+     99          	hci_command_send(HCI_CMND_NVMEM_READ, ptr, NVMEM_READ_PARAMS_LEN);
+    100          	SimpleLinkWaitEvent(HCI_CMND_NVMEM_READ, &ucStatus);
+    101          
+    102          	// In case there is data - read it - even if an error code is returned
+    103          	// Note: It is the user responsibility to ignore the data in case of an error code
+    104          
+    105          	// Wait for the data in a synchronous way. Here we assume that the buffer is 
+    106          	// big enough to store also parameters of nvmem
+    107          
+    108          	SimpleLinkWaitData(buff, 0, 0);
+    109          
+    110          	return(ucStatus);
+    111          }
+    112          
+    113          //*****************************************************************************
+    114          //
+    115          //!  nvmem_write
+    116          //!
+    117          //!  @param  ulFileId nvmem file id:\n
+    118          //!                   NVMEM_WLAN_DRIVER_SP_FILEID, NVMEM_WLAN_FW_SP_FILEID,
+    119          //!                   NVMEM_MAC_FILEID, NVMEM_BOOTLOADER_SP_FILEID,
+    120          //!                   and user files 12-15.
+    121          //!  @param  ulLength       number of bytes to write  
+    122          //!  @param  ulEntryOffset  offset in file to start write operation from 
+    123          //!  @param  buff           data to write
+    124          //!
+    125          //!  @return       on success 0, error otherwise.
+    126          //!
+    127          //!  @brief       Write data to nvmem.
+    128          //!               writes data to file referred by the ulFileId parameter. 
+    129          //!               Writes data to file ulOffset till ulLength.The file id will be 
+    130          //!               marked invalid till the write is done. The file entry doesn't
+    131          //!               need to be valid - only allocated.
+    132          //!	 
+    133          //*****************************************************************************
+    134          
+    135          INT32 nvmem_write(UINT32 ulFileId, UINT32 ulLength, UINT32 ulEntryOffset, UINT8 *buff)
+    136          {
+    137          	INT32 iRes;
+    138          	UINT8 *ptr;
+    139          	UINT8 *args;
+    140          
+    141          	iRes = EFAIL;
+    142          
+    143          	ptr = tSLInformation.pucTxCommandBuffer;
+    144          	args = (ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE);
+    145          
+    146          	// Fill in HCI packet structure
+    147          	args = UINT32_TO_STREAM(args, ulFileId);
+    148          	args = UINT32_TO_STREAM(args, 12);
+    149          	args = UINT32_TO_STREAM(args, ulLength);
+    150          	args = UINT32_TO_STREAM(args, ulEntryOffset);
+    151          
+    152          	memcpy((ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE + 
+    153          		NVMEM_WRITE_PARAMS_LEN),buff,ulLength);
+    154          
+    155          	// Initiate a HCI command but it will come on data channel
+    156          	hci_data_command_send(HCI_CMND_NVMEM_WRITE, ptr, NVMEM_WRITE_PARAMS_LEN,
+    157          		ulLength);
+    158          
+    159          	SimpleLinkWaitEvent(HCI_EVNT_NVMEM_WRITE, &iRes);
+    160          
+    161          	return(iRes);
+    162          }
+    163          
+    164          
+    165          //*****************************************************************************
+    166          //
+    167          //!  nvmem_set_mac_address
+    168          //!
+    169          //!  @param  mac   mac address to be set
+    170          //!
+    171          //!  @return       on success 0, error otherwise.
+    172          //!
+    173          //!  @brief       Write MAC address to EEPROM. 
+    174          //!               mac address as appears over the air (OUI first)
+    175          //!	 
+    176          //*****************************************************************************
+    177          
+    178          UINT8 nvmem_set_mac_address(UINT8 *mac)
+    179          {
+    180          	return  nvmem_write(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
+    181          }
+    182          
+    183          //*****************************************************************************
+    184          //
+    185          //!  nvmem_get_mac_address
+    186          //!
+    187          //!  @param[out]  mac   mac address  
+    188          //!
+    189          //!  @return       on success 0, error otherwise.
+    190          //!
+    191          //!  @brief       Read MAC address from EEPROM. 
+    192          //!               mac address as appears over the air (OUI first)
+    193          //!	 
+    194          //*****************************************************************************
+    195          
+    196          UINT8 nvmem_get_mac_address(UINT8 *mac)
+    197          {
+    198          	return  nvmem_read(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
+    199          }
+    200          
+    201          //*****************************************************************************
+    202          //
+    203          //!  nvmem_write_patch
+    204          //!
+    205          //!  @param  ulFileId   nvmem file id:\n
+    206          //!                     NVMEM_WLAN_DRIVER_SP_FILEID, NVMEM_WLAN_FW_SP_FILEID,
+    207          //!  @param  spLength   number of bytes to write 
+    208          //!  @param  spData     SP data to write
+    209          //!
+    210          //!  @return       on success 0, error otherwise.
+    211          //!
+    212          //!  @brief      program a patch to a specific file ID. 
+    213          //!              The SP data is assumed to be organized in 2-dimensional.
+    214          //!              Each line is SP_PORTION_SIZE bytes long. Actual programming is 
+    215          //!              applied in SP_PORTION_SIZE bytes portions.
+    216          //!	 
+    217          //*****************************************************************************
+    218          
+    219          UINT8 nvmem_write_patch(UINT32 ulFileId, UINT32 spLength, const UINT8 *spData)
+    220          {
+    221          	UINT8 	status = 0;
+    222          	UINT16	offset = 0;
+    223          	UINT8*      spDataPtr = (UINT8*)spData;
+    224          
+    225          	while ((status == 0) && (spLength >= SP_PORTION_SIZE))
+    226          	{
+    227          		status = nvmem_write(ulFileId, SP_PORTION_SIZE, offset, spDataPtr);
+    228          		offset += SP_PORTION_SIZE;
+    229          		spLength -= SP_PORTION_SIZE;
+    230          		spDataPtr += SP_PORTION_SIZE;
+    231          	}
+    232          
+    233          	if (status !=0)
+    234          	{
+    235          		// NVMEM error occurred
+    236          		return status;
+    237          	}
+    238          
+    239          	if (spLength != 0)
+    240          	{
+    241          		// if reached here, a reminder is left
+    242          		status = nvmem_write(ulFileId, spLength, offset, spDataPtr);
+    243          	}
+    244          
+    245          	return status;
+    246          }
+    247          
+    248          //*****************************************************************************
+    249          //
+    250          //!  nvmem_read_sp_version
+    251          //!
+    252          //!  @param[out]  patchVer    first number indicates package ID and the second 
+    253          //!                           number indicates package build number   
+    254          //!
+    255          //!  @return       on success  0, error otherwise.
+    256          //!
+    257          //!  @brief      Read patch version. read package version (WiFi FW patch, 
+    258          //!              driver-supplicant-NS patch, bootloader patch)
+    259          //!	 
+    260          //*****************************************************************************
+    261          
+    262          #ifndef CC3000_TINY_DRIVER
+    263          UINT8 nvmem_read_sp_version(UINT8* patchVer)
+    264          {
+    265          	UINT8 *ptr;
+    266          	// 1st byte is the status and the rest is the SP version
+    267          	UINT8	retBuf[5];	
+    268          
+    269          	ptr = tSLInformation.pucTxCommandBuffer;
+    270          
+    271          	// Initiate a HCI command, no args are required
+    272          	hci_command_send(HCI_CMND_READ_SP_VERSION, ptr, 0);	
+    273          	SimpleLinkWaitEvent(HCI_CMND_READ_SP_VERSION, retBuf);
+    274          
+    275          	// package ID
+    276          	*patchVer = retBuf[3];			
+    277          	// package build number
+    278          	*(patchVer+1) = retBuf[4];		
+    279          
+    280          	return(retBuf[0]);
+    281          }
+    282          #endif
+    283          
+    284          //*****************************************************************************
+    285          //
+    286          //!  nvmem_create_entry
+    287          //!
+    288          //!  @param       ulFileId    nvmem file Id:\n
+    289          //!                           * NVMEM_AES128_KEY_FILEID: 12
+    290          //!                           * NVMEM_SHARED_MEM_FILEID: 13
+    291          //!                           * and fileIDs 14 and 15
+    292          //!  @param       ulNewLen    entry ulLength  
+    293          //!
+    294          //!  @return       on success 0, error otherwise.
+    295          //!
+    296          //!  @brief      Create new file entry and allocate space on the NVMEM. 
+    297          //!              Applies only to user files.
+    298          //!              Modify the size of file.
+    299          //!              If the entry is unallocated - allocate it to size 
+    300          //!              ulNewLen (marked invalid).
+    301          //!              If it is allocated then deallocate it first.
+    302          //!              To just mark the file as invalid without resizing - 
+    303          //!              set ulNewLen=0.
+    304          //!	 
+    305          //*****************************************************************************
+    306          
+    307          INT32 nvmem_create_entry(UINT32 ulFileId, UINT32 ulNewLen)
+    308          {
+    309          	UINT8 *ptr; 
+    310          	UINT8 *args;
+    311          	UINT8 retval;
+    312          
+    313          	ptr = tSLInformation.pucTxCommandBuffer;
+    314          	args = (ptr + HEADERS_SIZE_CMD);
+    315          
+    316          	// Fill in HCI packet structure
+    317          	args = UINT32_TO_STREAM(args, ulFileId);
+    318          	args = UINT32_TO_STREAM(args, ulNewLen);
+    319          
+    320          	// Initiate a HCI command
+    321          	hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY,ptr, NVMEM_CREATE_PARAMS_LEN);
+    322          
+    323          	SimpleLinkWaitEvent(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
+    324          
+    325          	return(retval);
+    326          }
+    327          
+    328          
+    329          
+    330          //*****************************************************************************
+    331          //
+    332          // Close the Doxygen group.
+    333          //! @}
+    334          //
+    335          //*****************************************************************************
+    336          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+     10   nvmem_create_entry
+       10   -> SimpleLinkWaitEvent
+       10   -> UINT32_TO_STREAM_f
+       10   -> hci_command_send
+      8   nvmem_get_mac_address
+        8   -> nvmem_read
+     10   nvmem_read
+       10   -> SimpleLinkWaitData
+       10   -> SimpleLinkWaitEvent
+       10   -> UINT32_TO_STREAM_f
+       10   -> hci_command_send
+      8   nvmem_set_mac_address
+        8   -> nvmem_write
+     14   nvmem_write
+       14   -> SimpleLinkWaitEvent
+       14   -> UINT32_TO_STREAM_f
+       14   -> hci_data_command_send
+       14   -> memcpy
+     20   nvmem_write_patch
+       20   -> nvmem_write
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      10  ?Subroutine0
+       6  ?Subroutine1
+      26  ?Subroutine2
+      38  nvmem_create_entry
+      20  nvmem_get_mac_address
+      70  nvmem_read
+      22  nvmem_set_mac_address
+     120  nvmem_write
+     116  nvmem_write_patch
+
+ 
+ 428 bytes in segment CODE
+ 
+ 428 bytes of CODE memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <configuration>
+    <name>Debug</name>
+    <toolchain>
+      <name>MSP430</name>
+    </toolchain>
+    <debug>1</debug>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <toolchain>
+      <name>MSP430</name>
+    </toolchain>
+    <debug>0</debug>
+  </configuration>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\error_codes.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\host_driver_version.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\security.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\security.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.h</name>
+  </file>
+</project>
+
+

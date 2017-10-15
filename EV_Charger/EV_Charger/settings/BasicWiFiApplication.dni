@@ -1,0 +1,135 @@
+[Stack]
+FillEnabled=1
+OverflowWarningsEnabled=0
+WarningThreshold=99
+SpWarningsEnabled=1
+WarnLogOnly=1
+UseTrigger=1
+TriggerName=main
+LimitSize=0
+ByteLimit=50
+[State Storage]
+Control Register=0
+[Sequencer]
+Control Register=0
+NextState0=0
+NextState1=0
+[Action Register]
+Break=0
+State Storage=0
+[DebugChecksum]
+Checksum=-2020205137
+[CallStack]
+ShowArgs=0
+[Disassembly]
+MixedMode=1
+[EEM State Storage]
+Buffer=BAAAAAAAAAAAAAAAAAAAAAAA
+[CallStackLog]
+Enabled=0
+[DriverProfiling]
+Enabled=0
+Mode=0
+Graph=0
+Symbiont=0
+Exclusions=
+[EEM Sequencer]
+Buffer=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+[EEM Cycle Counter 0]
+Counter0=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+[EEM Cycle Counter 1]
+Counter1=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+[array_types]
+Fmt0=char[32]	1	0
+[watch_formats]
+Fmt0={W}0:event_type	4	0
+Fmt1={W}0:ucArgsLength	3	0
+Fmt2={W}0:ucArgsize	3	0
+Fmt3={W}0:usLength	3	0
+Fmt4={W}0:usReceivedEventOpcode	4	0
+[PowerLog]
+LogEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+ShowTimeSum=0
+Title_0=Energy
+Symbol_0=0 4 1
+Title_1=Voltage
+Symbol_1=0 4 1
+Title_2=Current
+Symbol_2=0 4 1
+LiveEnabled=0
+LiveFile=PowerLogLive.log
+[Log file]
+LoggingEnabled=_ 0
+LogFile=_ ""
+Category=_ 0
+[TermIOLog]
+LoggingEnabled=_ 0
+LogFile=_ ""
+[PowerProbe]
+Frequency=10000
+Probe0=Current
+ProbeSetup0=0 1 1 2 0 0
+Probe1=Voltage
+ProbeSetup1=1 1 1 4 0 0
+Probe2=Energy
+ProbeSetup2=4 1 1 10 0 0
+[Breakpoints]
+Count=0
+[FET]
+Clock mode=39
+Extended Clock mode=1
+Secure Password=
+Extended Clock Control Enable=1
+Advanced Extended Clock Control=0
+Emulation mode=0
+Free running=0
+Shutting Down=1
+[Memory Dump]
+Start address=
+Lenghth=
+Address info=0
+Format=0
+Dump registers=0
+PC=0
+SP=0
+SR=0
+all registers=0
+File name=
+[InterruptLog]
+LogEnabled=0
+SumEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+ShowTimeSum=1
+SumSortOrder=0
+[DataLog]
+LogEnabled=0
+SumEnabled=0
+GraphEnabled=0
+ShowTimeLog=1
+ShowTimeSum=1
+[Breakpoints2]
+Count=0
+[Interrupts]
+Enabled=1
+[MemoryMap]
+Enabled=0
+Base=0
+UseAuto=0
+TypeViolation=1
+UnspecRange=1
+ActionState=1
+[Trace1]
+Enabled=0
+ShowSource=1
+[Aliases]
+A0=_ "C:\Users\Alex\Desktop\MIGRACIÓN\Source\CC3000HostDriver\evnt_handler.c" "C:\Users\Alex\Desktop\TFG\CC3000+MSP430AFE253\Source\CC3000HostDriver\evnt_handler.c"
+A1=_ "C:\Users\Alex\Desktop\TFG\CC3000+MSP430AFE253_FSM_Full\Source\BasicWiFi Application\basic_wifi_application.c" "Z:\CC3000+MSP430AFE253\Source\BasicWiFi Application\basic_wifi_application.c"
+A2=_ "C:\Users\Alex\Desktop\TFG\Proyecto\Source\CC3000HostDriver\socket.c" ""
+A3=_ "C:\Users\Alex\Desktop\TFG\Proyecto\Source\CC3000HostDriver\wlan.c" ""
+Count=4
+SuppressDialog=1
+[Simulator]
+Freq=1000000

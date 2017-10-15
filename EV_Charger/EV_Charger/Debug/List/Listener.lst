@@ -1,0 +1,296 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:44
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\Listener.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\Listener.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Listener.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\Listener.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\Listener.c
+      1          #include "Wifi.h" 
+      2          #include "Wattmeter.h" 
+      3          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+      4          #include "board.h"
+      5          #include "Analog_sampling.h"
+      6          #include "ControlPilot.h"
+      7          #include "Charger_States.h"
+      8          #include "Listener.h"
+      9          #include "FlashMemory.h"
+     10          #include "SmartConfig.h"
+     11          #include "Wattmeter.h"
+     12          #include "Wifi.h"
+     13          #include "nvmem.h"
+     14          #include "Main.h"
+     15          #include <msp430.h>
+     16          
+     17          
+     18          
+
+   \                                 In  segment CODE, align 2
+     19          void checkMessage()
+   \                     checkMessage:
+     20          {     
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+   \   000008   3182         SUB.W   #0x8, SP
+     21            char answer[8]={0,0,0,0,0,0,0,0};
+   \   00000A   0C41         MOV.W   SP, R12
+   \   00000C   3E42         MOV.W   #0x8, R14
+   \   00000E   B012....     CALL    #?ClearMemoryBytes
+     22            answer[1]=read_Identifier();
+   \   000012   B012....     CALL    #read_Identifier
+   \   000016   C14C0100     MOV.B   R12, 0x1(SP)
+     23                     
+     24            switch (((char)pucCC3000_Rx_Buffer[0])) {
+   \   00001A   5E42....     MOV.B   &pucCC3000_Rx_Buffer, R14
+   \   00001E   4E83         SUB.B   #0x0, R14
+   \   000020   0D24         JEQ     ??checkMessage_2
+   \   000022   6E83         SUB.B   #0x2, R14
+   \   000024   1E24         JEQ     ??checkMessage_3
+   \   000026   6E82         SUB.B   #0x4, R14
+   \   000028   3B24         JEQ     ??checkMessage_4
+   \   00002A   5E83         SUB.B   #0x1, R14
+   \   00002C   4524         JEQ     ??checkMessage_5
+   \   00002E   5E83         SUB.B   #0x1, R14
+   \   000030   4C24         JEQ     ??checkMessage_6
+   \   000032   5E83         SUB.B   #0x1, R14
+   \   000034   4F24         JEQ     ??checkMessage_7
+   \   000036   5E83         SUB.B   #0x1, R14
+   \   000038   6624         JEQ     ??checkMessage_8
+   \   00003A   703C         JMP     ??checkMessage_9
+     25                 
+     26                  
+     27                  //Vinculate charger
+     28                  case 0:   //Confirm Vinculation, Save Charger Identifier
+     29                    
+     30                    if(Charger_State==SmartConfig_Assign)
+   \                     ??checkMessage_2:
+   \   00003C   F2900600.... CMP.B   #0x6, &Charger_State
+   \   000042   6C20         JNE     ??checkMessage_9
+     31                    {
+     32                       answer[0]=0;
+   \   000044   C1430000     MOV.B   #0x0, 0(SP)
+     33                       answer[1]=pucCC3000_Rx_Buffer[1];
+   \   000048   D142....0100 MOV.B   &pucCC3000_Rx_Buffer + 1, 0x1(SP)
+     34                       
+     35                       sendMessage(answer);  //Confirm Vinculation    
+   \   00004E   0C41         MOV.W   SP, R12
+   \   000050   B012....     CALL    #sendMessage
+     36                      // __delay_cycles(1000000); 
+     37                       Charger_State=Not_Connected;
+   \   000054   C243....     MOV.B   #0x0, &Charger_State
+     38                       set_Registers(pucCC3000_Rx_Buffer[1]);
+   \   000058   5C42....     MOV.B   &pucCC3000_Rx_Buffer + 1, R12
+   \   00005C   B012....     CALL    #set_Registers
+   \   000060   5D3C         JMP     ??checkMessage_9
+     39                    }
+     40                    break;
+     41                  case 1:  //Nothing
+     42                    break;
+     43                    
+     44                  case 2: //Read Active Energy Consumption 
+     45                          
+     46                          answer[0]=2;
+   \                     ??checkMessage_3:
+   \   000062   E1430000     MOV.B   #0x2, 0(SP)
+     47                          
+     48                          
+     49                          answer[7]= (powerSummation>>56)&(0xFF);                
+   \   000066   3F40....     MOV.W   #powerSummation, R15
+   \   00006A   3C4F         MOV.W   @R15+, R12
+   \   00006C   3D4F         MOV.W   @R15+, R13
+   \   00006E   3E4F         MOV.W   @R15+, R14
+   \   000070   3F4F         MOV.W   @R15+, R15
+   \   000072   0B4F         MOV.W   R15, R11
+   \   000074   8B10         SWPB    R11
+   \   000076   C14B0700     MOV.B   R11, 0x7(SP)
+     50                          answer[6] = (powerSummation>>48)&(0xFF);
+   \   00007A   C14F0600     MOV.B   R15, 0x6(SP)
+     51                          answer[5] = (powerSummation>>40)&(0xFF);
+   \   00007E   084E         MOV.W   R14, R8
+   \   000080   0B4F         MOV.W   R15, R11
+   \   000082   8B10         SWPB    R11
+   \   000084   8810         SWPB    R8
+   \   000086   48EB         XOR.B   R11, R8
+   \   000088   48EB         XOR.B   R11, R8
+   \   00008A   C1480500     MOV.B   R8, 0x5(SP)
+     52                          answer[4] = (powerSummation>>32)&(0xFF);
+   \   00008E   C14E0400     MOV.B   R14, 0x4(SP)
+     53                          answer[3] = (powerSummation>>24)&(0xFF);
+   \   000092   0A4D         MOV.W   R13, R10
+   \   000094   8A10         SWPB    R10
+   \   000096   C14A0300     MOV.B   R10, 0x3(SP)
+     54                          answer[2] = (powerSummation>>16)&(0xFF);
+   \   00009A   C14D0200     MOV.B   R13, 0x2(SP)
+     55                          
+     56                         
+     57                          sendMessage(answer);
+   \   00009E   3B3C         JMP     ??checkMessage_0
+     58                    break;
+     59                  case 3:   //Read Reactive Energy Consumption   
+     60                    
+     61                    break;
+     62                  case 4:  //Read Average Power   
+     63                    
+     64                    break;
+     65                    
+     66                  case 5: //Read Maximum Power
+     67                    
+     68                    break;
+     69                  
+     70                  case 6:   //Reset Wattmeter
+     71                          answer[0]=6;
+   \                     ??checkMessage_4:
+   \   0000A0   F14006000000 MOV.B   #0x6, 0(SP)
+     72                          powerSummation=0;
+   \   0000A6   8243....     MOV.W   #0x0, &powerSummation
+   \   0000AA   8243....     MOV.W   #0x0, &powerSummation + 2
+   \   0000AE   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   0000B2   8243....     MOV.W   #0x0, &powerSummation + 6
+     73                          sendMessage(answer);  
+   \   0000B6   2F3C         JMP     ??checkMessage_0
+     74                    break; 
+     75                    
+     76                  case 7:   //Read car status
+     77                          WDT_counter=0;
+   \                     ??checkMessage_5:
+   \   0000B8   C243....     MOV.B   #0x0, &WDT_counter
+     78                          answer[0]=7;                
+   \   0000BC   F14007000000 MOV.B   #0x7, 0(SP)
+     79                          answer[2] = Charger_State;
+   \   0000C2   D142....0200 MOV.B   &Charger_State, 0x2(SP)
+     80                          sendMessage(answer);  
+   \   0000C8   263C         JMP     ??checkMessage_0
+     81                    break;
+     82                  case 8: //Restore from Error State 
+     83                          Charger_State=Not_Connected;
+   \                     ??checkMessage_6:
+   \   0000CA   C243....     MOV.B   #0x0, &Charger_State
+     84                          answer[0]=8;            
+   \   0000CE   F1420000     MOV.B   #0x8, 0(SP)
+     85                          sendMessage(answer);
+   \   0000D2   213C         JMP     ??checkMessage_0
+     86                    break;   
+     87                  case 9:  //Set Max Power
+     88                          answer[0]=9;
+   \                     ??checkMessage_7:
+   \   0000D4   F14009000000 MOV.B   #0x9, 0(SP)
+     89                          
+     90                          answer[7]=pucCC3000_Rx_Buffer[1];
+   \   0000DA   5F42....     MOV.B   &pucCC3000_Rx_Buffer + 1, R15
+   \   0000DE   C14F0700     MOV.B   R15, 0x7(SP)
+     91                          if((unsigned short) pucCC3000_Rx_Buffer[1]<3)
+   \   0000E2   7F900300     CMP.B   #0x3, R15
+   \   0000E6   042C         JC      ??checkMessage_10
+     92                                TACCR1=8000;
+   \   0000E8   B240401F7401 MOV.W   #0x1f40, &0x174
+   \   0000EE   133C         JMP     ??checkMessage_0
+     93                          else
+     94                                TA0CCR1 = 80*((unsigned short) pucCC3000_Rx_Buffer[1]); 
+   \                     ??checkMessage_10:
+   \   0000F0   0F5F         RLA.W   R15
+   \   0000F2   0F5F         RLA.W   R15
+   \   0000F4   0F5F         RLA.W   R15
+   \   0000F6   0F5F         RLA.W   R15
+   \   0000F8   0B4F         MOV.W   R15, R11
+   \   0000FA   0F5F         RLA.W   R15
+   \   0000FC   0F5F         RLA.W   R15
+   \   0000FE   0F5B         ADD.W   R11, R15
+   \   000100   824F7401     MOV.W   R15, &0x174
+     95                                          
+     96                          sendMessage(answer);  
+   \   000104   083C         JMP     ??checkMessage_0
+     97                    
+     98                    break; 
+     99                   case 10:  //Ping to Identifier IP Charger (Broadcast) or check connection
+    100                       if(pucCC3000_Rx_Buffer[1]==read_Identifier())
+   \                     ??checkMessage_8:
+   \   000106   B012....     CALL    #read_Identifier
+   \   00010A   C29C....     CMP.B   R12, &pucCC3000_Rx_Buffer + 1
+   \   00010E   0620         JNE     ??checkMessage_9
+    101                       {
+    102                          answer[0]=10;  
+   \   000110   F1400A000000 MOV.B   #0xa, 0(SP)
+    103                          
+    104                          sendMessage(answer);  
+   \                     ??checkMessage_0:
+   \   000116   0C41         MOV.W   SP, R12
+   \   000118   B012....     CALL    #sendMessage
+    105                       }
+    106                    break;
+    107                    
+    108                    
+    109            default:
+    110              break;
+    111            }
+    112          }
+   \                     ??checkMessage_9:
+   \   00011C   3152         ADD.W   #0x8, SP
+   \   00011E   3040....     BR      #?Epilogue4
+   \   000122                REQUIRE TACCR1
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \   000000   000000000000 DC8 0, 0, 0, 0, 0, 0, 0, 0
+   \            0000        
+    113          
+    114          
+    115          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+     18   checkMessage
+       18   -> read_Identifier
+       18   -> sendMessage
+       18   -> set_Registers
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       8  ?<Constant {0, 0, 0, 0, 0, 0, 0, 0}>
+       2  TACCR1
+     290  checkMessage
+
+ 
+ 290 bytes in segment CODE
+   2 bytes in segment DATA16_AN
+   8 bytes in segment DATA16_C
+ 
+ 290 bytes of CODE  memory
+   8 bytes of CONST memory
+   0 bytes of DATA  memory (+ 2 bytes shared)
+
+Errors: none
+Warnings: none

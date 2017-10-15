@@ -1,0 +1,1082 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:45
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\Wifi.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\Wifi.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Wifi.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME Wifi
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?Epilogue4
+        EXTERN ?DivMod8u
+        EXTERN ?cstart_init_zero
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBLIC CC3000_UsynchCallback
+        PUBLIC OkToDoShutDown
+        PUBWEAK SD24CCTL2
+        PUBWEAK TACCTL2
+        PUBLIC ascii_to_char
+        PUBLIC atoc
+        PUBLIC atoshort
+        PUBLIC aucCC3000_prefix
+        PUBLIC closeSocket
+        PUBLIC digits
+        PUBLIC initDriver
+        PUBLIC itoa
+        PUBLIC pucCC3000_Rx_Buffer
+        PUBLIC receiveMessage
+        PUBLIC sendBootLoaderPatch
+        PUBLIC sendDriverPatch
+        PUBLIC sendMessage
+        PUBLIC sendWLFWPatch
+        PUBLIC tSocketAddr
+        PUBLIC ucStopSmartConfig
+        PUBLIC ulArpStatus
+        PUBLIC ulCC3000Connected
+        PUBLIC ulCC3000DHCP
+        PUBLIC ulCC3000DHCP_configured
+        PUBLIC ulSmartConfigFinished
+        PUBLIC ulSocket
+
+        EXTERN socket
+        EXTERN memset
+        EXTERN bind
+        EXTERN recvfrom
+        EXTERN closesocket
+        EXTERN sendto
+        EXTERN pio_init
+        EXTERN init_spi
+        EXTERN WriteWlanPin
+        EXTERN WlanInterruptDisable
+        EXTERN WlanInterruptEnable
+        EXTERN ReadWlanInterruptPin
+        EXTERN wlan_init
+        EXTERN wlan_start
+        EXTERN wlan_set_event_mask
+        EXTERN sprintf
+
+// Z:\EV_Charger\Source\EV_Charger\Wifi.c
+//    1 #include "wlan.h" 
+//    2 #include "evnt_handler.h"    
+//    3 #include "nvmem.h"
+//    4 #include "socket.h"
+//    5 #include "netapp.h"
+//    6 #include "spi.h"
+//    7 #include "spi_version.h"
+//    8 #include "board.h"
+//    9 #include "Wifi.h"
+//   10 #include "application_version.h"
+//   11 #include "host_driver_version.h"
+//   12 #include <msp430.h>
+
+        ASEGN DATA16_AN:DATA:NOROOT,0106H
+// unsigned short volatile SD24CCTL2
+SD24CCTL2:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,0166H
+// unsigned short volatile TACCTL2
+TACCTL2:
+        DS8 2
+//   13 #include "security.h"
+//   14 #include "main.h"
+//   15 
+//   16 #define PALTFORM_VERSION                               (1)
+//   17 
+//   18 
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+//   19 volatile unsigned long ulSmartConfigFinished, ulCC3000Connected,ulCC3000DHCP, OkToDoShutDown, ulCC3000DHCP_configured;
+ulSmartConfigFinished:
+        DS8 4
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+ulCC3000Connected:
+        DS8 4
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+ulCC3000DHCP:
+        DS8 4
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+OkToDoShutDown:
+        DS8 4
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+ulCC3000DHCP_configured:
+        DS8 4
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(0)
+        REQUIRE ?cstart_init_zero
+//   20 volatile unsigned char ucStopSmartConfig;
+ucStopSmartConfig:
+        DS8 1
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+//   21 volatile long ulSocket;
+ulSocket:
+        DS8 4
+
+        RSEG DATA16_C:CONST:SORT:NOROOT(0)
+`?<Constant "IP:%d.%d.%d.%d\\f\\r">`:
+        DC8 "IP:%d.%d.%d.%d\014\015"
+//   22 
+//   23 
+//   24 // Simple Config Prefix
+
+        RSEG DATA16_C:CONST:SORT:NOROOT(0)
+//   25 const char aucCC3000_prefix[] = {'T', 'T', 'T'};
+aucCC3000_prefix:
+        DC8 84, 84, 84
+//   26 //unsigned char printOnce = 1;
+
+        RSEG DATA16_C:CONST:SORT:NOROOT(0)
+//   27 const char digits[] = "0123456789";
+digits:
+        DC8 "0123456789"
+//   28 
+//   29 //static char *datos;
+//   30  // The family is AF_INET
+//   31 enum 
+//   32 {
+//   33     ARP_INIT = 1,
+//   34     ARP_IN_PROGRESS = 2,
+//   35     ARP_DONE
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(0)
+        REQUIRE ?cstart_init_zero
+//   36 } ulArpStatus;
+ulArpStatus:
+        DS8 1
+//   37 
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+//   38 sockaddr tSocketAddr;
+tSocketAddr:
+        DS8 16
+//   39 
+//   40 //******************************************************************************
+//   41 
+//   42 
+
+        RSEG DATA16_N:DATA:SORT:NOROOT(0)
+//   43 __no_init unsigned char pucCC3000_Rx_Buffer[CC3000_APP_BUFFER_SIZE + CC3000_RX_BUFFER_OVERHEAD_SIZE];
+pucCC3000_Rx_Buffer:
+        DS8 22
+//   44 
+//   45 
+//   46 
+//   47 //! @brief  Convert integer to ASCII in decimal base
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   48 unsigned short itoa(char cNum, char *cString)
+itoa:
+//   49 {
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        PUSH.W  R9
+        MOV.B   R12, R11
+        MOV.W   R13, R8
+//   50     char* ptr;
+//   51     char uTemp = cNum;
+        MOV.B   R12, R9
+//   52     unsigned short length;
+//   53 
+//   54     // Value 0 is a special case
+//   55     if (cNum == 0)
+        CMP.B   #0x0, R12
+        JNE     ??itoa_2
+//   56     {
+//   57         length = 1;
+//   58         *cString = '0';
+        MOV.B   #0x30, 0(R13)
+//   59         
+//   60         return length;
+        MOV.W   #0x1, R12
+        JMP     ??itoa_3
+//   61     }
+//   62 
+//   63     // Find out the length of the number, in decimal base
+//   64     length = 0;
+??itoa_2:
+        MOV.W   #0x0, R10
+//   65     while (uTemp > 0)
+//   66     {
+//   67         uTemp /= 10;
+??itoa_0:
+        CALL    #?Subroutine11
+??CrossCallReturnLabel_21:
+        MOV.B   R12, R9
+//   68         length++;
+        ADD.W   #0x1, R10
+//   69     }
+        CMP.B   #0x0, R12
+        JNE     ??itoa_0
+//   70 
+//   71     // Do the actual formatting, right to left
+//   72     uTemp = cNum;
+        MOV.B   R11, R9
+//   73     ptr = cString + length;
+        ADD.W   R10, R8
+//   74     while (uTemp > 0)
+//   75     {
+//   76         --ptr;
+??itoa_1:
+        ADD.W   #0xffff, R8
+//   77         *ptr = digits[uTemp % 10];
+        CALL    #?Subroutine11
+??CrossCallReturnLabel_22:
+        MOV.B   R14, R14
+        MOV.B   digits(R14), 0(R8)
+//   78         uTemp /= 10;
+        CALL    #?Subroutine11
+//   79     }
+??CrossCallReturnLabel_23:
+        MOV.B   R12, R9
+        CMP.B   #0x0, R12
+        JNE     ??itoa_1
+//   80 
+//   81     return length;
+        MOV.W   R10, R12
+??itoa_3:
+        BR      #?Epilogue4
+//   82 }
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine11:
+        MOV.B   R9, R12
+        MOV.B   #0xa, R14
+        BR      #?DivMod8u
+//   83 
+//   84 //! @brief  Convert nibble to hexdecimal from ASCII
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   85 unsigned char atoc(char data)
+atoc:
+//   86 {
+//   87     unsigned char ucRes;
+//   88 
+//   89     if ((data >= 0x30) && (data <= 0x39))
+        MOV.B   R12, R15
+        ADD.B   #0xd0, R15
+        CMP.B   #0xa, R15
+        JC      ??atoc_0
+//   90     {
+//   91         ucRes = data - 0x30;
+        MOV.B   R15, R14
+        JMP     ??atoc_1
+//   92     }
+//   93     else
+//   94     {
+//   95         if (data == 'a')
+??atoc_0:
+        CMP.B   #0x61, R12
+        JNE     ??atoc_2
+//   96         {
+//   97             ucRes = 0x0a;;
+        MOV.B   #0xa, R14
+        JMP     ??atoc_1
+//   98         }
+//   99         else if (data == 'b')
+??atoc_2:
+        CMP.B   #0x62, R12
+        JNE     ??atoc_3
+//  100         {
+//  101             ucRes = 0x0b;
+        MOV.B   #0xb, R14
+        JMP     ??atoc_1
+//  102         }
+//  103         else if (data == 'c')
+??atoc_3:
+        CMP.B   #0x63, R12
+        JNE     ??atoc_4
+//  104         {
+//  105             ucRes = 0x0c;
+        MOV.B   #0xc, R14
+        JMP     ??atoc_1
+//  106         }
+//  107         else if (data == 'd')
+??atoc_4:
+        CMP.B   #0x64, R12
+        JNE     ??atoc_5
+//  108         {
+//  109             ucRes = 0x0d;
+        MOV.B   #0xd, R14
+        JMP     ??atoc_1
+//  110         }
+//  111         else if (data == 'e')
+??atoc_5:
+        CMP.B   #0x65, R12
+        JNE     ??atoc_6
+//  112         {
+//  113             ucRes = 0x0e;
+        MOV.B   #0xe, R14
+        JMP     ??atoc_1
+//  114         }
+//  115         else if (data == 'f')
+??atoc_6:
+        CMP.B   #0x66, R12
+        JNE     ??atoc_1
+//  116         {
+//  117             ucRes = 0x0f;
+        MOV.B   #0xf, R14
+//  118         }
+//  119     }
+//  120 
+//  121     return ucRes;
+??atoc_1:
+        MOV.B   R14, R12
+        RET
+//  122 }
+
+        RSEG CODE:CODE:NOROOT(1)
+ascii_to_char:
+        PUSH.W  R10
+        PUSH.W  R11
+        MOV.B   R13, R10
+        CALL    #atoc
+        MOV.B   R12, R11
+        MOV.B   R10, R12
+        CALL    #atoc
+        RLA.B   R11
+        RLA.B   R11
+        RLA.B   R11
+        RLA.B   R11
+        BIS.B   R11, R12
+        REQUIRE ?Subroutine1
+        // Fall through to label ?Subroutine1
+//  123 
+//  124 //! @brief  Convert 2 nibbles in ASCII into a short number
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        POP.W   R11
+        POP.W   R10
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  125 unsigned short atoshort(char b1, char b2)
+atoshort:
+//  126 {
+        PUSH.W  R10
+        PUSH.W  R11
+        MOV.B   R13, R11
+//  127     unsigned short usRes;
+//  128 
+//  129     usRes = (atoc(b1)) * 16 | atoc(b2);
+//  130 
+//  131     return usRes;
+        CALL    #atoc
+        MOV.B   R12, R10
+        MOV.B   R11, R12
+        CALL    #atoc
+        MOV.B   R12, R15
+        MOV.B   R10, R12
+        RLA.W   R12
+        RLA.W   R12
+        RLA.W   R12
+        RLA.W   R12
+        BIS.W   R15, R12
+        JMP     ?Subroutine1
+//  132 }
+
+        RSEG CODE:CODE:NOROOT(1)
+sendWLFWPatch:
+        REQUIRE ?Subroutine0
+        // Fall through to label ?Subroutine0
+//  133 
+//  134 //! @brief  Convert 2 bytes in ASCII into one character
+//  135 unsigned char ascii_to_char(char b1, char b2)
+//  136 {
+//  137     unsigned char ucRes;
+//  138 
+//  139     ucRes = (atoc(b1)) << 4 | (atoc(b2));
+//  140 
+//  141     return ucRes;
+//  142 }
+//  143 
+//  144 //! @brief  The function returns a pointer to the driver patch: since there is  
+//  145 //!         no patch (patches are taken from the EEPROM and not from the host
+//  146 //!         - it returns NULL
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+//  147 char *sendDriverPatch(unsigned long *Length)
+//  148 {
+//  149     *Length = 0;
+        MOV.W   #0x0, 0(R12)
+        MOV.W   #0x0, 0x2(R12)
+//  150     return NULL;
+        MOV.W   #0x0, R12
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+sendBootLoaderPatch:
+        JMP     ?Subroutine0
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+sendDriverPatch:
+        JMP     ?Subroutine0
+//  151 }
+//  152 
+//  153 //! @brief  The function returns a pointer to the bootloader patch: since there   
+//  154 //!         is no patch (patches are taken from the EEPROM and not from the host
+//  155 //!         - it returns NULL
+//  156 char *sendBootLoaderPatch(unsigned long *Length)
+//  157 {
+//  158     *Length = 0;
+//  159     return NULL;
+//  160 }
+//  161 
+//  162 
+//  163 //! @brief  The function returns a pointer to the driver patch: since there is  
+//  164 //!         no patch (patches are taken from the EEPROM and not from the host
+//  165 //!         - it returns NULL
+//  166 char *sendWLFWPatch(unsigned long *Length)
+//  167 {
+//  168     *Length = 0;
+//  169     return NULL;
+//  170 }
+//  171 
+//  172 //! @brief  The function handles asynchronous events that come from CC3000  
+//  173 //!         device and operates a LED1 to have an on-board indication
+//  174 
+
+        RSEG CODE:CODE:NOROOT(1)
+//  175 void CC3000_UsynchCallback(long lEventType, char * data, unsigned char length)
+CC3000_UsynchCallback:
+//  176 {
+//  177     if (lEventType == HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE)
+        CMP.W   #0x8080, R12
+        JNE     ??CC3000_UsynchCallback_0
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_0
+//  178     {
+//  179         ulSmartConfigFinished = 1;
+        MOV.W   #0x1, &ulSmartConfigFinished
+        MOV.W   #0x0, &ulSmartConfigFinished + 2
+//  180         ucStopSmartConfig     = 1;  
+        MOV.B   #0x1, &ucStopSmartConfig
+        RET
+//  181     }
+//  182 
+//  183     if (lEventType == HCI_EVNT_WLAN_UNSOL_CONNECT)
+??CC3000_UsynchCallback_0:
+        CMP.W   #0x8001, R12
+        JNE     ??CC3000_UsynchCallback_1
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_1
+        MOV.W   #0x1, &ulCC3000Connected
+        MOV.W   #0x0, &ulCC3000Connected + 2
+        RET
+//  184     {
+//  185         ulCC3000Connected = 1;
+//  186       
+//  187         // Turn on the LED7
+//  188 
+//  189     }
+//  190 
+//  191     if (lEventType == HCI_EVNT_WLAN_UNSOL_DISCONNECT)
+??CC3000_UsynchCallback_1:
+        CMP.W   #0x8002, R12
+        JNE     ??CC3000_UsynchCallback_2
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_2
+//  192     {		
+//  193         ulCC3000Connected = 0;
+        MOV.W   #0x0, &ulCC3000Connected
+        MOV.W   #0x0, &ulCC3000Connected + 2
+//  194         ulCC3000DHCP      = 0;
+        CALL    #?Subroutine8
+//  195         ulCC3000DHCP_configured = 0;
+??CrossCallReturnLabel_16:
+        MOV.W   #0x0, &ulCC3000DHCP_configured
+        MOV.W   #0x0, &ulCC3000DHCP_configured + 2
+        RET
+//  196         //printOnce = 1;
+//  197        
+//  198         // Turn off the LED7
+//  199 
+//  200         
+//  201         // Turn off LED5
+//  202          
+//  203     }
+//  204 
+//  205     if (lEventType == HCI_EVNT_WLAN_UNSOL_DHCP)
+??CC3000_UsynchCallback_2:
+        CMP.W   #0x8010, R12
+        JNE     ??CC3000_UsynchCallback_3
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_3
+//  206     {
+//  207         // Notes: 
+//  208         // 1) IP config parameters are received swapped
+//  209         // 2) IP config parameters are valid only if status is OK, 
+//  210         // i.e. ulCC3000DHCP becomes 1
+//  211 
+//  212         // Only if status is OK, the flag is set to 1 and the 
+//  213         // addresses are valid.
+//  214         if ( *(data + NETAPP_IPCONFIG_MAC_OFFSET) == 0)
+        CMP.B   #0x0, 0x14(R14)
+        JEQ     ??CC3000_UsynchCallback_4
+        BR      #?Subroutine8
+//  215         {
+//  216             sprintf((char*)pucCC3000_Rx_Buffer,"IP:%d.%d.%d.%d\f\r", data[3],data[2], data[1], data[0]);
+??CC3000_UsynchCallback_4:
+        MOV.B   @R14, R15
+        PUSH.W  R15
+        MOV.B   0x1(R14), R15
+        PUSH.W  R15
+        MOV.B   0x2(R14), R15
+        PUSH.W  R15
+        MOV.B   0x3(R14), R15
+        PUSH.W  R15
+        MOV.W   #`?<Constant "IP:%d.%d.%d.%d\\f\\r">`, R13
+        MOV.W   #pucCC3000_Rx_Buffer, R12
+        CALL    #sprintf
+//  217             ulCC3000DHCP = 1;
+        MOV.W   #0x1, &ulCC3000DHCP
+        MOV.W   #0x0, &ulCC3000DHCP + 2
+        ADD.W   #0x8, SP
+        RET
+//  218 
+//  219         }
+//  220         else
+//  221         {
+//  222             ulCC3000DHCP = 0;
+//  223 
+//  224         }
+//  225     }
+//  226 
+//  227     if (lEventType == HCI_EVENT_CC3000_CAN_SHUT_DOWN)
+??CC3000_UsynchCallback_3:
+        CMP.W   #0x99, R12
+        JNE     ??CC3000_UsynchCallback_5
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_5
+        MOV.W   #0x1, &OkToDoShutDown
+        MOV.W   #0x0, &OkToDoShutDown + 2
+        RET
+//  228     {
+//  229         OkToDoShutDown = 1;
+//  230     }	
+//  231     
+//  232     
+//  233     if (lEventType == HCI_EVNT_ASYNC_ARP_DONE)
+??CC3000_UsynchCallback_5:
+        CMP.W   #0x8400, R12
+        JNE     ??CC3000_UsynchCallback_6
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_6
+        MOV.B   #0x3, &ulArpStatus
+        RET
+//  234     {
+//  235        ulArpStatus = ARP_DONE;
+//  236     }
+//  237 
+//  238     if (lEventType == HCI_EVNT_ASYNC_ARP_WAITING)
+??CC3000_UsynchCallback_6:
+        CMP.W   #0x8900, R12
+        JNE     ??CC3000_UsynchCallback_7
+        CMP.W   #0x0, R13
+        JNE     ??CC3000_UsynchCallback_7
+//  239     {
+//  240        ulArpStatus = ARP_IN_PROGRESS;
+        MOV.B   #0x2, &ulArpStatus
+//  241     }  
+//  242 }
+??CC3000_UsynchCallback_7:
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine8:
+        MOV.W   #0x0, &ulCC3000DHCP
+        MOV.W   #0x0, &ulCC3000DHCP + 2
+        RET
+//  243 
+//  244 
+//  245 //!  @brief  The function initializes a CC3000 device and triggers it to 
+//  246 //!          start operation
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  247 int initDriver(void)
+initDriver:
+//  248 {
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        PUSH.W  R9
+        SUB.W   #0x32, SP
+//  249     ulCC3000DHCP = 0;
+        CALL    #?Subroutine8
+//  250     ulCC3000Connected = 0;
+??CrossCallReturnLabel_15:
+        MOV.W   #0x0, &ulCC3000Connected
+        MOV.W   #0x0, &ulCC3000Connected + 2
+//  251     ulSocket = 0;
+        MOV.W   #0x0, &ulSocket
+        MOV.W   #0x0, &ulSocket + 2
+//  252     ulSmartConfigFinished=0;
+        MOV.W   #0x0, &ulSmartConfigFinished
+        MOV.W   #0x0, &ulSmartConfigFinished + 2
+//  253     
+//  254      
+//  255     pio_init();
+        CALL    #pio_init
+//  256     __delay_cycles(120000);
+        ////////////// Start of 120000 cycles delay.
+        NOP
+        MOV.W   #0x9c3e, R15
+??initDriver_6:
+        ADD.W   #0xffff, R15
+        JC      ??initDriver_6
+        ////////////// End of delay code.
+//  257     
+//  258     init_spi();
+        CALL    #init_spi
+//  259     
+//  260 
+//  261     // WLAN On API Implementation
+//  262     wlan_init(CC3000_UsynchCallback, sendWLFWPatch, sendDriverPatch, sendBootLoaderPatch, ReadWlanInterruptPin, WlanInterruptEnable, WlanInterruptDisable, WriteWlanPin);
+        PUSH.W  #WriteWlanPin
+        PUSH.W  #WlanInterruptDisable
+        PUSH.W  #WlanInterruptEnable
+        PUSH.W  #ReadWlanInterruptPin
+        MOV.W   #sendBootLoaderPatch, R15
+        MOV.W   #sendDriverPatch, R14
+        MOV.W   #sendWLFWPatch, R13
+        MOV.W   #CC3000_UsynchCallback, R12
+        CALL    #wlan_init
+//  263 
+//  264 
+//  265     // Trigger a WLAN device
+//  266     wlan_start(0);
+        MOV.W   #0x0, R12
+        CALL    #wlan_start
+//  267 
+//  268     // Mask out all non-required events from CC3000
+//  269     wlan_set_event_mask(HCI_EVENT_MASK);
+        MOV.W   #0x8244, R12
+        MOV.W   #0x0, R13
+        CALL    #wlan_set_event_mask
+//  270      // Generate the event to CLI: send a version string
+//  271     {
+//  272         char cc3000IP[50];
+//  273         char *ccPtr;
+//  274         unsigned short ccLen;
+//  275                      
+//  276         ccPtr = &cc3000IP[0];
+//  277         ccLen = itoa(PALTFORM_VERSION, ccPtr);
+//  278         ccPtr += ccLen;
+        MOV.W   SP, R10
+        ADD.W   #0x8, R10
+        MOV.W   SP, R13
+        ADD.W   #0x8, R13
+        MOV.B   #0x1, R12
+        CALL    #?Subroutine7
+//  279         *ccPtr++ = '.';
+//  280         ccLen = itoa(APPLICATION_VERSION, ccPtr);
+//  281         ccPtr += ccLen;
+??CrossCallReturnLabel_13:
+        MOV.W   R10, R13
+        MOV.B   #0xe, R12
+        CALL    #?Subroutine7
+//  282         *ccPtr++ = '.';
+//  283         ccLen = itoa(SPI_VERSION_NUMBER, ccPtr);
+??CrossCallReturnLabel_14:
+        MOV.B   #0x7, R8
+        MOV.W   #0x0, R9
+        MOV.B   #0xa, R11
+        ADD.W   #0x8, SP
+        CALL    #?Subroutine10
+??CrossCallReturnLabel_19:
+        MOV.B   #0x7, R8
+        CALL    #?Subroutine9
+//  284         ccPtr += ccLen;
+//  285         *ccPtr++ = '.';
+??CrossCallReturnLabel_17:
+        MOV.B   #0x2e, 0(R10)
+        ADD.W   #0x1, R10
+//  286         ccLen = itoa(DRIVER_VERSION_NUMBER, ccPtr);
+        MOV.B   #0x10, R8
+        MOV.W   #0x0, R9
+        CALL    #?Subroutine10
+??CrossCallReturnLabel_20:
+        MOV.B   #0x10, R8
+        CALL    #?Subroutine9
+//  287         ccPtr += ccLen;
+//  288         *ccPtr++ = '\f';
+??CrossCallReturnLabel_18:
+        MOV.B   #0xc, 0(R10)
+        ADD.W   #0x1, R10
+//  289         *ccPtr++ = '\r';
+        MOV.B   #0xd, 0(R10)
+        ADD.W   #0x1, R10
+//  290         *ccPtr++ = '\0';
+        MOV.B   #0x0, 0(R10)
+//  291     }
+//  292 
+//  293     __delay_cycles(2000000); 
+        ////////////// Start of 2000000 cycles delay.
+        MOV.W   #0xa11e, R15
+        MOV.W   #0x7, R11
+??initDriver_7:
+        ADD.W   #0xffff, R15
+        ADDC.W  #0xffff, R11
+        JC      ??initDriver_7
+        ////////////// End of delay code.
+//  294 
+//  295     ucStopSmartConfig   = 0;
+        MOV.B   #0x0, &ucStopSmartConfig
+//  296     
+//  297     
+//  298      
+//  299     
+//  300     return(0);
+        MOV.W   #0x0, R12
+        ADD.W   #0x32, SP
+        BR      #?Epilogue4
+//  301 }
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine7:
+        CALL    #itoa
+        ADD.W   R12, R10
+        MOV.B   #0x2e, 0(R10)
+        ADD.W   #0x1, R10
+        RET
+//  302 
+//  303 
+//  304 
+//  305 
+//  306 
+//  307 
+//  308 //Close socket
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine5:
+        MOV.W   &ulSocket, R12
+        MOV.W   &ulSocket + 2, R13
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+//  309 void closeSocket()
+closeSocket:
+//  310 {
+//  311     closesocket( ulSocket );       
+        CALL    #?Subroutine5
+??CrossCallReturnLabel_10:
+        REQUIRE ?Subroutine13
+        // Fall through to label ?Subroutine13
+//  312     ulSocket = 0xFFFFFFFF;    
+//  313 }
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine13:
+        CALL    #closesocket
+        MOV.W   #0xffff, &ulSocket
+        MOV.W   #0xffff, &ulSocket + 2
+        RET
+//  314 
+//  315 //Function send UDP message
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  316 void sendMessage(char *datos)
+sendMessage:
+//  317 {
+        PUSH.W  R10
+        MOV.W   R12, R10
+//  318  
+//  319         SD24CCTL2 &= ~SD24IE;
+        CALL    #?Subroutine4
+//  320         TACCTL2&= ~CCIE;
+//  321 
+//  322         ulArpStatus = ARP_INIT;
+??CrossCallReturnLabel_6:
+        MOV.B   #0x1, &ulArpStatus
+//  323         
+//  324         //Open UDP socket
+//  325         ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        PUSH.W  #0x0
+        PUSH.W  #0x11
+        CALL    #?Subroutine6
+??CrossCallReturnLabel_11:
+        CALL    #?Subroutine2
+//  326          // The family is AF_INET
+//  327         tSocketAddr.sa_family = AF_INET;  
+//  328         
+//  329         //PORT:4444
+//  330         tSocketAddr.sa_data[0] = 0x11;
+//  331         tSocketAddr.sa_data[1] = 0x5C; 
+//  332  
+//  333         //IP:192.168.1.128
+//  334         tSocketAddr.sa_data[2] = 0xC0;
+//  335         tSocketAddr.sa_data[3] = 0xA8;
+//  336         tSocketAddr.sa_data[4] = 0x01;
+//  337         tSocketAddr.sa_data[5] = 0x80;
+//  338         //unsigned long longitud=strlen(datos);  
+//  339         
+//  340         sendto(ulSocket, datos, 8, 0, &tSocketAddr, sizeof(sockaddr));                
+??CrossCallReturnLabel_1:
+        PUSH.W  #0x0
+        PUSH.W  #0x10
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        PUSH.W  #0x8
+        MOV.W   #tSocketAddr, R15
+        MOV.W   R10, R14
+        CALL    #?Subroutine5
+??CrossCallReturnLabel_9:
+        CALL    #sendto
+//  341        
+//  342         
+//  343        /* if(firstSend == 1)
+//  344         {   
+//  345             while(ulArpStatus == ARP_INIT || ulArpStatus == ARP_IN_PROGRESS); 
+//  346             
+//  347            firstSend = 0;
+//  348        }
+//  349        */         
+//  350        __delay_cycles(2000); 
+        ////////////// Start of 2000 cycles delay.
+        MOV.W   #0x299, R15
+??sendMessage_0:
+        ADD.W   #0xffff, R15
+        JC      ??sendMessage_0
+        ////////////// End of delay code.
+//  351        
+//  352         closeSocket();
+        CALL    #?Subroutine3
+//  353         SD24CCTL2 |= SD24IE;
+//  354         TACCTL2|= CCIE;
+//  355 
+//  356            
+//  357 }
+??CrossCallReturnLabel_3:
+        ADD.W   #0x10, SP
+        POP.W   R10
+        RET
+        REQUIRE SD24CCTL2
+        REQUIRE TACCTL2
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine6:
+        MOV.W   #0x2, R14
+        MOV.W   #0x0, R15
+        MOV.W   #0x2, R12
+        MOV.W   #0x0, R13
+        BR      #socket
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine4:
+        BIC.W   #0x8, &0x106
+        BIC.W   #0x10, &0x166
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine3:
+        MOV.W   &ulSocket, R12
+        MOV.W   &ulSocket + 2, R13
+        CALL    #?Subroutine13
+??CrossCallReturnLabel_27:
+        BIS.W   #0x8, &0x106
+        BIS.W   #0x10, &0x166
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine2:
+        MOV.W   R12, &ulSocket
+        MOV.W   R13, &ulSocket + 2
+        MOV.W   #0x2, &tSocketAddr
+        MOV.B   #0x11, &tSocketAddr + 2
+        MOV.B   #0x5c, &tSocketAddr + 3
+        MOV.B   #0xc0, &tSocketAddr + 4
+        MOV.B   #0xa8, &tSocketAddr + 5
+        MOV.B   #0x1, &tSocketAddr + 6
+        MOV.B   #0x80, &tSocketAddr + 7
+        RET
+//  358 
+//  359 
+//  360 
+//  361 
+//  362 //Function receive UDP message
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  363 void receiveMessage()
+receiveMessage:
+//  364 {
+        SUB.W   #0x4, SP
+//  365         SD24CCTL2 &= ~SD24IE;
+        CALL    #?Subroutine4
+//  366         TACCTL2&= ~CCIE;
+//  367        // sockaddr tSocketAddr;
+//  368         socklen_t tRxPacketLength;  
+//  369         //Open UDP socket
+//  370     
+//  371         ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+??CrossCallReturnLabel_4:
+        PUSH.W  #0x0
+        PUSH.W  #0x11
+        CALL    #?Subroutine6
+??CrossCallReturnLabel_12:
+        CALL    #?Subroutine2
+//  372            
+//  373         // The family is AF_INET
+//  374         tSocketAddr.sa_family = AF_INET;  
+//  375         
+//  376         //PORT:4444
+//  377         tSocketAddr.sa_data[0] = 0x11;
+//  378         tSocketAddr.sa_data[1] = 0x5C; 
+//  379  
+//  380         //IP:192.168.1.128
+//  381         tSocketAddr.sa_data[2] = 0xC0;
+//  382         tSocketAddr.sa_data[3] = 0xA8;
+//  383         tSocketAddr.sa_data[4] = 0x01;
+//  384         tSocketAddr.sa_data[5] = 0x80;
+//  385          
+//  386         //Fill data in tSocketAddr with "0"
+//  387         memset (&tSocketAddr.sa_data[2], 0, 4);  
+??CrossCallReturnLabel_0:
+        MOV.W   #0x4, R14
+        MOV.W   #0x0, R13
+        MOV.W   #tSocketAddr + 4, R12
+        CALL    #memset
+//  388         //Associate socket ato a port and ip address
+//  389         bind(ulSocket, &tSocketAddr, sizeof(sockaddr));   
+        PUSH.W  #0x0
+        PUSH.W  #0x10
+        MOV.W   #tSocketAddr, R14
+        CALL    #?Subroutine5
+??CrossCallReturnLabel_7:
+        CALL    #bind
+//  390         SD24CCTL2 |= SD24IE;
+        BIS.W   #0x8, &0x106
+//  391         TACCTL2|= CCIE;
+        BIS.W   #0x10, &0x166
+//  392         recvfrom(ulSocket, pucCC3000_Rx_Buffer, CC3000_APP_BUFFER_SIZE, 0, &tSocketAddr, &tRxPacketLength); 
+        MOV.W   SP, R15
+        ADD.W   #0x8, R15
+        PUSH.W  R15
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        PUSH.W  #0x2
+        MOV.W   #tSocketAddr, R15
+        MOV.W   #pucCC3000_Rx_Buffer, R14
+        CALL    #?Subroutine5
+??CrossCallReturnLabel_8:
+        CALL    #recvfrom
+//  393         SD24CCTL2 &= ~SD24IE;
+        CALL    #?Subroutine4
+//  394         TACCTL2&= ~CCIE;
+//  395         closeSocket();
+??CrossCallReturnLabel_5:
+        CALL    #?Subroutine3
+//  396         SD24CCTL2 |= SD24IE;
+//  397         TACCTL2|= CCIE;
+//  398       
+//  399 }
+??CrossCallReturnLabel_2:
+        ADD.W   #0x16, SP
+        RET
+        REQUIRE SD24CCTL2
+        REQUIRE TACCTL2
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine10:
+        CALL    #?Subroutine12
+??CrossCallReturnLabel_26:
+        MOV.B   R12, R8
+        ADD.W   #0x1, R9
+        CMP.B   #0x0, R12
+        JNE     ?Subroutine10
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine9:
+        ADD.W   R9, R10
+        MOV.W   R10, R9
+??initDriver_1:
+        ADD.W   #0xffff, R9
+        CALL    #?Subroutine12
+??CrossCallReturnLabel_24:
+        MOV.B   R14, R14
+        MOV.B   digits(R14), 0(R9)
+        CALL    #?Subroutine12
+??CrossCallReturnLabel_25:
+        MOV.B   R12, R8
+        CMP.B   #0x0, R12
+        JNE     ??initDriver_1
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine12:
+        MOV.B   R8, R12
+        MOV.B   R11, R14
+        BR      #?DivMod8u
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+//  400 
+//  401 
+// 
+// 1 070 bytes in segment CODE
+//     4 bytes in segment DATA16_AN
+//    31 bytes in segment DATA16_C
+//    22 bytes in segment DATA16_N
+//    42 bytes in segment DATA16_Z
+// 
+// 1 070 bytes of CODE  memory
+//    31 bytes of CONST memory
+//    64 bytes of DATA  memory (+ 4 bytes shared)
+//
+//Errors: none
+//Warnings: none

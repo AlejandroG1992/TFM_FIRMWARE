@@ -1,0 +1,985 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           12/Dec/2016  09:55:03
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\CC3000HostDriver\evnt_handler.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\CC3000HostDriver\evnt_handler.c -D
+#        MDNS_ADVERTISE_HOST -D CC3000_UNENCRYPTED_SMART_CONFIG -lcN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ --diag_suppress Pa039 -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h"
+#        --library_module -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\evnt_handler.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\evnt_handler.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\CC3000HostDriver\evnt_handler.c
+      1          /*****************************************************************************
+      2          *
+      3          *  evnt_handler.c  - CC3000 Host Driver Implementation.
+      4          *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
+      5          *
+      6          *  Redistribution and use in source and binary forms, with or without
+      7          *  modification, are permitted provided that the following conditions
+      8          *  are met:
+      9          *
+     10          *    Redistributions of source code must retain the above copyright
+     11          *    notice, this list of conditions and the following disclaimer.
+     12          *
+     13          *    Redistributions in binary form must reproduce the above copyright
+     14          *    notice, this list of conditions and the following disclaimer in the
+     15          *    documentation and/or other materials provided with the   
+     16          *    distribution.
+     17          *
+     18          *    Neither the name of Texas Instruments Incorporated nor the names of
+     19          *    its contributors may be used to endorse or promote products derived
+     20          *    from this software without specific prior written permission.
+     21          *
+     22          *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+     23          *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+     24          *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+     25          *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+     26          *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+     27          *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+     28          *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     29          *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+     30          *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+     31          *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+     32          *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     33          *
+     34          *****************************************************************************/
+     35          //*****************************************************************************
+     36          //
+     37          //! \addtogroup evnt_handler_api
+     38          //! @{
+     39          //
+     40          //******************************************************************************
+     41          
+     42          //******************************************************************************
+     43          //                  INCLUDE FILES
+     44          //******************************************************************************
+     45          
+     46          #include "cc3000_common.h"
+     47          #include "string.h"
+     48          #include "hci.h"
+     49          #include "evnt_handler.h"
+     50          #include "wlan.h"
+     51          #include "socket.h"
+     52          #include "netapp.h"
+     53          #include "spi.h"
+     54          #include <msp430.h>
+     55          
+     56          
+     57          
+     58          //*****************************************************************************
+     59          //                  COMMON DEFINES
+     60          //*****************************************************************************
+     61          
+     62          #define FLOW_CONTROL_EVENT_HANDLE_OFFSET		(0)
+     63          #define FLOW_CONTROL_EVENT_BLOCK_MODE_OFFSET	(1)
+     64          #define FLOW_CONTROL_EVENT_FREE_BUFFS_OFFSET	(2)
+     65          #define FLOW_CONTROL_EVENT_SIZE					(4)
+     66          
+     67          #define BSD_RSP_PARAMS_SOCKET_OFFSET		(0)
+     68          #define BSD_RSP_PARAMS_STATUS_OFFSET		(4)
+     69          
+     70          #define GET_HOST_BY_NAME_RETVAL_OFFSET	(0)
+     71          #define GET_HOST_BY_NAME_ADDR_OFFSET	(4)
+     72          
+     73          #define ACCEPT_SD_OFFSET			(0)
+     74          #define ACCEPT_RETURN_STATUS_OFFSET	(4)
+     75          #define ACCEPT_ADDRESS__OFFSET		(8)
+     76          
+     77          #define SL_RECEIVE_SD_OFFSET			(0)
+     78          #define SL_RECEIVE_NUM_BYTES_OFFSET		(4)
+     79          #define SL_RECEIVE__FLAGS__OFFSET		(8)
+     80          
+     81          
+     82          #define SELECT_STATUS_OFFSET			(0)
+     83          #define SELECT_READFD_OFFSET			(4)
+     84          #define SELECT_WRITEFD_OFFSET			(8)
+     85          #define SELECT_EXFD_OFFSET				(12)
+     86          
+     87          
+     88          #define NETAPP_IPCONFIG_IP_OFFSET				(0)
+     89          #define NETAPP_IPCONFIG_SUBNET_OFFSET			(4)
+     90          #define NETAPP_IPCONFIG_GW_OFFSET				(8)
+     91          #define NETAPP_IPCONFIG_DHCP_OFFSET				(12)
+     92          #define NETAPP_IPCONFIG_DNS_OFFSET				(16)
+     93          #define NETAPP_IPCONFIG_MAC_OFFSET				(20)
+     94          #define NETAPP_IPCONFIG_SSID_OFFSET				(26)
+     95          
+     96          #define NETAPP_IPCONFIG_IP_LENGTH				(4)
+     97          #define NETAPP_IPCONFIG_MAC_LENGTH				(6)
+     98          #define NETAPP_IPCONFIG_SSID_LENGTH				(32)
+     99          
+    100          
+    101          #define NETAPP_PING_PACKETS_SENT_OFFSET			(0)
+    102          #define NETAPP_PING_PACKETS_RCVD_OFFSET			(4)
+    103          #define NETAPP_PING_MIN_RTT_OFFSET				(8)
+    104          #define NETAPP_PING_MAX_RTT_OFFSET				(12)
+    105          #define NETAPP_PING_AVG_RTT_OFFSET				(16)
+    106          
+    107          #define GET_SCAN_RESULTS_TABlE_COUNT_OFFSET				(0)
+    108          #define GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET		(4)
+    109          #define GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET		(8)
+    110          #define GET_SCAN_RESULTS_FRAME_TIME_OFFSET				(10)
+    111          #define GET_SCAN_RESULTS_SSID_MAC_LENGTH				(38)
+    112          
+    113          #define GET_MSS_VAL_RETVAL_OFFSET	(0)
+    114          
+    115          //*****************************************************************************
+    116          //                  GLOBAL VARAIABLES
+    117          //*****************************************************************************
+    118          
+    119          UINT32 socket_active_status = SOCKET_STATUS_INIT_VAL; 
+    120          
+    121          #ifdef MDNS_ADVERTISE_HOST
+    122          UINT8 localIP[NETAPP_IPCONFIG_IP_LENGTH];
+    123          #endif
+    124          
+    125          
+    126          
+    127          //*****************************************************************************
+    128          //            Prototypes for the static functions
+    129          //*****************************************************************************
+    130          
+    131          static INT32 hci_event_unsol_flowcontrol_handler(CHARF *pEvent);
+    132          
+    133          static void update_socket_active_status(CHARF *resp_params);
+    134          
+    135          //*****************************************************************************
+    136          //
+    137          //!  hci_unsol_handle_patch_request
+    138          //!
+    139          //!  @param  event_hdr  event header
+    140          //!
+    141          //!  @return none
+    142          //!
+    143          //!  @brief   Handle unsolicited event from type patch request
+    144          //
+    145          //*****************************************************************************
+    146          void hci_unsol_handle_patch_request(CHARF *event_hdr)
+    147          {
+    148          	CHARF *params = (CHARF *)(event_hdr) + HCI_EVENT_HEADER_SIZE;
+    149          	UINT32 ucLength = 0;
+    150          	CHARF *patch;
+    151          
+    152          	switch (*params)
+    153          	{
+    154          	case HCI_EVENT_PATCHES_DRV_REQ:
+    155          
+    156          		if (tSLInformation.sDriverPatches)
+    157          		{
+    158          			patch = tSLInformation.sDriverPatches(&ucLength);
+    159          
+    160          			if (patch)
+    161          			{
+    162          				hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ, 
+    163          					tSLInformation.pucTxCommandBuffer, patch, ucLength);
+    164          				return;
+    165          			}
+    166          		}
+    167          
+    168          		// Send 0 length Patches response event
+    169          		hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ, 
+    170          			tSLInformation.pucTxCommandBuffer, 0, 0);
+    171          		break;
+    172          
+    173          	case HCI_EVENT_PATCHES_FW_REQ:
+    174          
+    175          		if (tSLInformation.sFWPatches)
+    176          		{
+    177          			patch = tSLInformation.sFWPatches(&ucLength);
+    178          
+    179          			// Build and send a patch
+    180          			if (patch)
+    181          			{
+    182          				hci_patch_send(HCI_EVENT_PATCHES_FW_REQ, 
+    183          					tSLInformation.pucTxCommandBuffer, patch, ucLength);
+    184          				return;
+    185          			}
+    186          		}
+    187          
+    188          		// Send 0 length Patches response event
+    189          		hci_patch_send(HCI_EVENT_PATCHES_FW_REQ, 
+    190          			tSLInformation.pucTxCommandBuffer, 0, 0);
+    191          		break;
+    192          
+    193          	case HCI_EVENT_PATCHES_BOOTLOAD_REQ:
+    194          
+    195          		if (tSLInformation.sBootLoaderPatches)
+    196          		{
+    197          			patch = tSLInformation.sBootLoaderPatches(&ucLength);
+    198          
+    199          			if (patch)
+    200          			{
+    201          				hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,  
+    202          					tSLInformation.pucTxCommandBuffer, patch, ucLength);
+    203          				return;
+    204          			}
+    205          		}
+    206          
+    207          		// Send 0 length Patches response event
+    208          		hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ, 
+    209          			tSLInformation.pucTxCommandBuffer, 0, 0);
+    210          		break;
+    211          	}
+    212          }
+    213          
+    214          
+    215          
+    216          //*****************************************************************************
+    217          //
+    218          //!  hci_event_handler
+    219          //!
+    220          //!  @param  pRetParams     incoming data buffer
+    221          //!  @param  from           from information (in case of data received)
+    222          //!  @param  fromlen        from information length (in case of data received)
+    223          //!
+    224          //!  @return         none
+    225          //!
+    226          //!  @brief          Parse the incoming events packets and issues corresponding
+    227          //!                  event handler from global array of handlers pointers
+    228          //
+    229          //*****************************************************************************
+    230          
+    231          
+    232          UINT8 * hci_event_handler(void *pRetParams, UINT8 *from, UINT8 *fromlen)
+    233          {
+    234          	UINT8 *pucReceivedData, ucArgsize;
+    235          	UINT16 usLength;
+    236          	UINT8 *pucReceivedParams;
+    237          	UINT16 usReceivedEventOpcode = 0;
+    238          	UINT32 retValue32;
+    239          	UINT8 * RecvParams;
+    240          	UINT8 *RetParams;
+    241          
+    242                  
+    243          	while (1)
+    244          	{
+    245                                  
+    246          		if (tSLInformation.usEventOrDataReceived != 0)
+    247          		{				
+    248          			pucReceivedData = (tSLInformation.pucReceivedData);
+    249          
+    250          			if (*pucReceivedData == HCI_TYPE_EVNT)
+    251          			{
+    252          				// Event Received
+    253          				STREAM_TO_UINT16((CHARF *)pucReceivedData, HCI_EVENT_OPCODE_OFFSET,
+    254          					usReceivedEventOpcode);
+    255          				pucReceivedParams = pucReceivedData + HCI_EVENT_HEADER_SIZE;		
+    256          				RecvParams = pucReceivedParams;
+    257          				RetParams = pRetParams;
+    258          
+    259          				// In case unsolicited event received - here the handling finished
+    260          				if (hci_unsol_event_handler((CHARF *)pucReceivedData) == 0)
+    261          				{
+    262          					STREAM_TO_UINT8(pucReceivedData, HCI_DATA_LENGTH_OFFSET, usLength);
+    263          
+    264          					switch(usReceivedEventOpcode)
+    265          					{		
+    266          					case HCI_CMND_READ_BUFFER_SIZE:
+    267          						{
+    268          							STREAM_TO_UINT8((CHARF *)pucReceivedParams, 0, 
+    269          								tSLInformation.usNumberOfFreeBuffers);
+    270          							STREAM_TO_UINT16((CHARF *)pucReceivedParams, 1, 
+    271          								tSLInformation.usSlBufferLength);
+    272          						}
+    273          						break;
+    274          
+    275          					case HCI_CMND_WLAN_CONFIGURE_PATCH:
+    276          					case HCI_NETAPP_DHCP:
+    277          					case HCI_NETAPP_PING_SEND:
+    278          					case HCI_NETAPP_PING_STOP:
+    279          					case HCI_NETAPP_ARP_FLUSH:
+    280          					case HCI_NETAPP_SET_DEBUG_LEVEL:
+    281          					case HCI_NETAPP_SET_TIMERS:
+    282          					case HCI_EVNT_NVMEM_READ:
+    283          					case HCI_EVNT_NVMEM_CREATE_ENTRY:
+    284          					case HCI_CMND_NVMEM_WRITE_PATCH:
+    285          					case HCI_NETAPP_PING_REPORT:
+    286          					case HCI_EVNT_MDNS_ADVERTISE:
+    287          
+    288          						STREAM_TO_UINT8(pucReceivedData, HCI_EVENT_STATUS_OFFSET
+    289          							,*(UINT8 *)pRetParams);
+    290          						break;
+    291          
+    292          					case HCI_CMND_SETSOCKOPT:
+    293          					case HCI_CMND_WLAN_CONNECT:
+    294          					case HCI_CMND_WLAN_IOCTL_STATUSGET:
+    295          					case HCI_EVNT_WLAN_IOCTL_ADD_PROFILE:
+    296          					case HCI_CMND_WLAN_IOCTL_DEL_PROFILE:
+    297          					case HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY:
+    298          					case HCI_CMND_WLAN_IOCTL_SET_SCANPARAM:
+    299          					case HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START:
+    300          					case HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP:
+    301          					case HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX:
+    302          					case HCI_CMND_EVENT_MASK:
+    303          					case HCI_EVNT_WLAN_DISCONNECT:
+    304          					case HCI_EVNT_SOCKET:
+    305          					case HCI_EVNT_BIND:
+    306          					case HCI_CMND_LISTEN:
+    307          					case HCI_EVNT_CLOSE_SOCKET:
+    308          					case HCI_EVNT_CONNECT:
+    309          					case HCI_EVNT_NVMEM_WRITE:
+    310          
+    311          						STREAM_TO_UINT32((CHARF *)pucReceivedParams,0
+    312          							,*(UINT32 *)pRetParams);
+    313          						break;
+    314          
+    315          					case HCI_EVNT_READ_SP_VERSION:
+    316          
+    317          						STREAM_TO_UINT8(pucReceivedData, HCI_EVENT_STATUS_OFFSET
+    318          							,*(UINT8 *)pRetParams);
+    319          						pRetParams = ((CHARF *)pRetParams) + 1;
+    320          						STREAM_TO_UINT32((CHARF *)pucReceivedParams, 0, retValue32);
+    321          						UINT32_TO_STREAM((UINT8 *)pRetParams, retValue32);				
+    322          						break;
+    323          
+    324          					case HCI_EVNT_BSD_GETHOSTBYNAME:
+    325          
+    326          						STREAM_TO_UINT32((CHARF *)pucReceivedParams
+    327          							,GET_HOST_BY_NAME_RETVAL_OFFSET,*(UINT32 *)pRetParams);
+    328          						pRetParams = ((CHARF *)pRetParams) + 4;
+    329          						STREAM_TO_UINT32((CHARF *)pucReceivedParams
+    330          							,GET_HOST_BY_NAME_ADDR_OFFSET,*(UINT32 *)pRetParams);					
+    331          						break;
+    332          
+    333          					case HCI_EVNT_GETMSSVALUE:
+    334          
+    335          						STREAM_TO_UINT16((CHARF *)pucReceivedParams
+    336          							,GET_MSS_VAL_RETVAL_OFFSET,*(UINT16 *)pRetParams);					
+    337          
+    338          						break;
+    339          
+    340          					case HCI_EVNT_ACCEPT:
+    341          						{
+    342          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,ACCEPT_SD_OFFSET
+    343          								,*(UINT32 *)pRetParams);
+    344          							pRetParams = ((CHARF *)pRetParams) + 4;
+    345          							STREAM_TO_UINT32((CHARF *)pucReceivedParams
+    346          								,ACCEPT_RETURN_STATUS_OFFSET,*(UINT32 *)pRetParams);
+    347          							pRetParams = ((CHARF *)pRetParams) + 4; 
+    348          
+    349          							//This argument returns in network order
+    350          							memcpy((UINT8 *)pRetParams, 
+    351          								pucReceivedParams + ACCEPT_ADDRESS__OFFSET, sizeof(sockaddr));	
+    352          							break;
+    353          						}
+    354          
+    355          					case HCI_EVNT_RECV:
+    356          					case HCI_EVNT_RECVFROM:
+    357          						{       
+    358                                                                  
+    359          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SL_RECEIVE_SD_OFFSET ,*(UINT32 *)pRetParams);
+    360          							pRetParams = ((CHARF *)pRetParams) + 4;
+    361          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET,*(UINT32 *)pRetParams);
+    362          							pRetParams = ((CHARF *)pRetParams) + 4;
+    363          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SL_RECEIVE__FLAGS__OFFSET,*(UINT32 *)pRetParams);
+    364          
+    365          							if(((tBsdReadReturnParams *)pRetParams)->iNumberOfBytes == ERROR_SOCKET_INACTIVE)
+    366          							{
+    367          								set_socket_active_status(((tBsdReadReturnParams *)pRetParams)->iSocketDescriptor,SOCKET_STATUS_INACTIVE);
+    368          							}
+    369          							break;
+    370          						}
+    371          
+    372          					case HCI_EVNT_SEND:
+    373          					case HCI_EVNT_SENDTO:
+    374          						{
+    375          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SL_RECEIVE_SD_OFFSET ,*(UINT32 *)pRetParams);
+    376          							pRetParams = ((CHARF *)pRetParams) + 4;
+    377          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET,*(UINT32 *)pRetParams);
+    378          							pRetParams = ((CHARF *)pRetParams) + 4;
+    379          
+    380          							break;
+    381          						}
+    382          
+    383          					case HCI_EVNT_SELECT:
+    384          						{ 
+    385          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SELECT_STATUS_OFFSET,*(UINT32 *)pRetParams);
+    386          							pRetParams = ((CHARF *)pRetParams) + 4;
+    387          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SELECT_READFD_OFFSET,*(UINT32 *)pRetParams);
+    388          							pRetParams = ((CHARF *)pRetParams) + 4;
+    389          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SELECT_WRITEFD_OFFSET,*(UINT32 *)pRetParams);
+    390          							pRetParams = ((CHARF *)pRetParams) + 4;
+    391          							STREAM_TO_UINT32((CHARF *)pucReceivedParams,SELECT_EXFD_OFFSET,*(UINT32 *)pRetParams);			
+    392          							break;
+    393          						}
+    394          
+    395          					case HCI_CMND_GETSOCKOPT:
+    396          
+    397          						STREAM_TO_UINT8(pucReceivedData, HCI_EVENT_STATUS_OFFSET,((tBsdGetSockOptReturnParams *)pRetParams)->iStatus);
+    398          						//This argument returns in network order
+    399          						memcpy((UINT8 *)pRetParams, pucReceivedParams, 4);
+    400          						break;
+    401          
+    402          					case HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS:
+    403          
+    404          						STREAM_TO_UINT32((CHARF *)pucReceivedParams,GET_SCAN_RESULTS_TABlE_COUNT_OFFSET,*(UINT32 *)pRetParams);
+    405          						pRetParams = ((CHARF *)pRetParams) + 4;   					
+    406          						STREAM_TO_UINT32((CHARF *)pucReceivedParams,GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET,*(UINT32 *)pRetParams);
+    407          						pRetParams = ((CHARF *)pRetParams) + 4;                                                        					
+    408          						STREAM_TO_UINT16((CHARF *)pucReceivedParams,GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET,*(UINT32 *)pRetParams);
+    409          						pRetParams = ((CHARF *)pRetParams) + 2;   					
+    410          						STREAM_TO_UINT16((CHARF *)pucReceivedParams,GET_SCAN_RESULTS_FRAME_TIME_OFFSET,*(UINT32 *)pRetParams);
+    411          						pRetParams = ((CHARF *)pRetParams) + 2;  
+    412          						memcpy((UINT8 *)pRetParams, (CHARF *)(pucReceivedParams + GET_SCAN_RESULTS_FRAME_TIME_OFFSET + 2), GET_SCAN_RESULTS_SSID_MAC_LENGTH);	
+    413          						break;
+    414          
+    415          					case HCI_CMND_SIMPLE_LINK_START:
+    416          						break;
+    417          
+    418          					case HCI_NETAPP_IPCONFIG:
+    419          
+    420          						//Read IP address
+    421          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_IP_LENGTH);
+    422          						RecvParams += 4;
+    423          
+    424          						//Read subnet
+    425          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_IP_LENGTH);
+    426          						RecvParams += 4;
+    427          
+    428          						//Read default GW
+    429          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_IP_LENGTH);
+    430          						RecvParams += 4;
+    431          
+    432          						//Read DHCP server                                          	
+    433          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_IP_LENGTH);
+    434          						RecvParams += 4;
+    435          
+    436          						//Read DNS server                                           
+    437          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_IP_LENGTH);
+    438          						RecvParams += 4;
+    439          
+    440          						//Read Mac address                            	
+    441          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_MAC_LENGTH);
+    442          						RecvParams += 6;
+    443          
+    444          						//Read SSID
+    445          						STREAM_TO_STREAM(RecvParams,RetParams,NETAPP_IPCONFIG_SSID_LENGTH);
+    446          
+    447          					}
+    448          				}
+    449          
+    450          				if (usReceivedEventOpcode == tSLInformation.usRxEventOpcode)
+    451          				{
+    452          					tSLInformation.usRxEventOpcode = 0;
+    453          				}
+    454          			}
+    455          			else
+    456          			{				
+    457          				pucReceivedParams = pucReceivedData;
+    458          				STREAM_TO_UINT8((CHARF *)pucReceivedData, HCI_PACKET_ARGSIZE_OFFSET, ucArgsize);
+    459          
+    460          				STREAM_TO_UINT16((CHARF *)pucReceivedData, HCI_PACKET_LENGTH_OFFSET, usLength);
+    461          
+    462          				// Data received: note that the only case where from and from length 
+    463          				// are not null is in recv from, so fill the args accordingly
+    464          				if (from)
+    465          				{
+    466          					STREAM_TO_UINT32((CHARF *)(pucReceivedData + HCI_DATA_HEADER_SIZE), BSD_RECV_FROM_FROMLEN_OFFSET, *(UINT32 *)fromlen);
+    467          					memcpy(from, (pucReceivedData + HCI_DATA_HEADER_SIZE + BSD_RECV_FROM_FROM_OFFSET) ,*fromlen);
+    468          				}
+    469          
+    470          				memcpy(pRetParams, pucReceivedParams + HCI_DATA_HEADER_SIZE + ucArgsize,
+    471          					usLength - ucArgsize);
+    472          
+    473          				tSLInformation.usRxDataPending = 0;
+    474          			}
+    475          
+    476          			tSLInformation.usEventOrDataReceived = 0;
+    477          
+    478          			SpiResumeSpi();
+    479          
+    480          			// Since we are going to TX - we need to handle this event after the 
+    481          			// ResumeSPi since we need interrupts
+    482          			if ((*pucReceivedData == HCI_TYPE_EVNT) &&
+    483          				(usReceivedEventOpcode == HCI_EVNT_PATCHES_REQ))
+    484          			{
+    485          				hci_unsol_handle_patch_request((CHARF *)pucReceivedData);
+    486          			}
+    487          
+    488          			if ((tSLInformation.usRxEventOpcode == 0) && (tSLInformation.usRxDataPending == 0))
+    489          			{
+    490          				return NULL;
+    491          			}	
+    492          		}
+    493                          
+    494                  
+    495                  }
+    496                  
+    497              
+    498          
+    499          }
+    500          
+    501          //*****************************************************************************
+    502          //
+    503          //!  hci_unsol_event_handler
+    504          //!
+    505          //!  @param  event_hdr   event header
+    506          //!
+    507          //!  @return             1 if event supported and handled
+    508          //!                      0 if event is not supported
+    509          //!
+    510          //!  @brief              Handle unsolicited events
+    511          //
+    512          //*****************************************************************************
+    513          INT32 hci_unsol_event_handler(CHARF *event_hdr)
+    514          {
+    515          	CHARF * data = NULL;
+    516          	INT32 event_type;
+    517          	UINT32 NumberOfReleasedPackets;
+    518          	UINT32 NumberOfSentPackets;
+    519          
+    520          	STREAM_TO_UINT16(event_hdr, HCI_EVENT_OPCODE_OFFSET,event_type);
+    521          
+    522          	if (event_type & HCI_EVNT_UNSOL_BASE)
+    523          	{
+    524          		switch(event_type)
+    525          		{
+    526          
+    527          		case HCI_EVNT_DATA_UNSOL_FREE_BUFF:
+    528          			{
+    529          				hci_event_unsol_flowcontrol_handler(event_hdr);
+    530          
+    531          				NumberOfReleasedPackets = tSLInformation.NumberOfReleasedPackets;
+    532          				NumberOfSentPackets = tSLInformation.NumberOfSentPackets;
+    533          
+    534          				if (NumberOfReleasedPackets == NumberOfSentPackets)
+    535          				{
+    536          					if (tSLInformation.InformHostOnTxComplete)
+    537          					{
+    538          						tSLInformation.sWlanCB(HCI_EVENT_CC3000_CAN_SHUT_DOWN, NULL, 0);
+    539          					}
+    540          				}				
+    541          				return 1;
+    542          
+    543          			}
+    544          		}
+    545          	}
+    546          
+    547          	if(event_type & HCI_EVNT_WLAN_UNSOL_BASE)
+    548          	{           
+    549          		switch(event_type)
+    550          		{
+    551                          
+    552          		case HCI_EVNT_WLAN_KEEPALIVE:
+    553                            //resetWDT();
+    554                            
+    555                            
+    556                            break;
+    557          		case HCI_EVNT_WLAN_UNSOL_CONNECT:
+    558          		case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
+    559          		case HCI_EVNT_WLAN_UNSOL_INIT:
+    560          		case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
+    561          
+    562          			if( tSLInformation.sWlanCB )
+    563          			{
+    564          				tSLInformation.sWlanCB(event_type, 0, 0);
+    565          			}
+    566          			break;
+    567          
+    568          		case HCI_EVNT_WLAN_UNSOL_DHCP:
+    569          			{
+    570          				UINT8	params[NETAPP_IPCONFIG_MAC_OFFSET + 1];	// extra byte is for the status
+    571          				UINT8 *recParams = params;
+    572          
+    573          				data = (CHARF*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
+    574          
+    575          				//Read IP address
+    576          				STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+    577          				data += 4;
+    578          
+    579          #ifdef MDNS_ADVERTISE_HOST
+    580          				localIP[0] = *(recParams-NETAPP_IPCONFIG_IP_LENGTH);
+    581          				localIP[1] = *(recParams-NETAPP_IPCONFIG_IP_LENGTH + 1);
+    582          				localIP[2] = *(recParams-NETAPP_IPCONFIG_IP_LENGTH + 2);
+    583          				localIP[3] = *(recParams-NETAPP_IPCONFIG_IP_LENGTH + 3);
+    584          #endif
+    585          				//Read subnet
+    586          				STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+    587          				data += 4;
+    588          				//Read default GW
+    589          				STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH); 
+    590          				data += 4;
+    591          				//Read DHCP server  
+    592          				STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);     
+    593          				data += 4;
+    594          				//Read DNS server  
+    595          				STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH); 
+    596          				// read the status
+    597          				STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET, *recParams);
+    598          
+    599          
+    600          				if( tSLInformation.sWlanCB )
+    601          				{
+    602          					tSLInformation.sWlanCB(event_type, (CHARF *)params, sizeof(params));
+    603          				}
+    604          			}
+    605          			break;
+    606          
+    607          		case HCI_EVNT_WLAN_ASYNC_PING_REPORT:
+    608          			{
+    609          				netapp_pingreport_args_t params;			
+    610          				data = (CHARF*)(event_hdr) + HCI_EVENT_HEADER_SIZE;			
+    611          				STREAM_TO_UINT32(data, NETAPP_PING_PACKETS_SENT_OFFSET, params.packets_sent);			
+    612          				STREAM_TO_UINT32(data, NETAPP_PING_PACKETS_RCVD_OFFSET, params.packets_received);			
+    613          				STREAM_TO_UINT32(data, NETAPP_PING_MIN_RTT_OFFSET, params.min_round_time);		
+    614          				STREAM_TO_UINT32(data, NETAPP_PING_MAX_RTT_OFFSET, params.max_round_time);	
+    615          				STREAM_TO_UINT32(data, NETAPP_PING_AVG_RTT_OFFSET, params.avg_round_time);
+    616          
+    617          				if( tSLInformation.sWlanCB )
+    618          				{
+    619          					tSLInformation.sWlanCB(event_type, (CHARF *)&params, sizeof(params));
+    620          				}
+    621          			}
+    622          			break;
+    623          		case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
+    624          			{
+    625          				data = (CHARF *)(event_hdr) + HCI_EVENT_HEADER_SIZE;
+    626          				if( tSLInformation.sWlanCB )
+    627          				{
+    628          					//data[0] represents the socket id, for which FIN was received by remote.
+    629          					//Upon receiving this event, the user can close the socket, or else the 
+    630          					//socket will be closded after inacvitity timeout (by default 60 seconds)
+    631          					tSLInformation.sWlanCB(event_type, data, 1);
+    632          				}
+    633          			}
+    634                      break;
+    635                      
+    636                  case HCI_EVNT_ASYNC_ARP_DONE:
+    637                  case HCI_EVNT_ASYNC_ARP_WAITING:
+    638                  	if( tSLInformation.sWlanCB )
+    639          			{
+    640          				tSLInformation.sWlanCB(event_type, 0, 0);
+    641          			}
+    642                      break;
+    643          
+    644          			//'default' case which means "event not supported" 	
+    645          		default: 
+    646          			return (0);
+    647          		}
+    648          		return(1);
+    649          	}
+    650          
+    651          	if ((event_type == HCI_EVNT_SEND) || (event_type == HCI_EVNT_SENDTO)
+    652          		|| (event_type == HCI_EVNT_WRITE))
+    653          	{
+    654          		CHARF *pArg;
+    655          		INT32 status;
+    656          
+    657          		pArg = M_BSD_RESP_PARAMS_OFFSET(event_hdr);
+    658          		STREAM_TO_UINT32(pArg, BSD_RSP_PARAMS_STATUS_OFFSET,status);
+    659          
+    660          		if (ERROR_SOCKET_INACTIVE == status)
+    661          		{
+    662          			// The only synchronous event that can come from SL device in form of 
+    663          			// command complete is "Command Complete" on data sent, in case SL device 
+    664          			// was unable to transmit
+    665          			STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET, tSLInformation.slTransmitDataError);
+    666          			update_socket_active_status(M_BSD_RESP_PARAMS_OFFSET(event_hdr));
+    667          
+    668          			return (1);
+    669          		}
+    670          		else
+    671          			return (0);
+    672          	}
+    673          
+    674          	//handle a case where unsolicited event arrived, but was not handled by any of the cases above
+    675          	if ((event_type != tSLInformation.usRxEventOpcode) && (event_type != HCI_EVNT_PATCHES_REQ))
+    676          	{
+    677          		return(1);
+    678          	}
+    679          
+    680          	return(0);
+    681          }
+    682          
+    683          //*****************************************************************************
+    684          //
+    685          //!  hci_unsolicited_event_handler
+    686          //!
+    687          //!  @param None
+    688          //!
+    689          //!  @return         ESUCCESS if successful, EFAIL if an error occurred
+    690          //!
+    691          //!  @brief          Parse the incoming unsolicited event packets and issues 
+    692          //!                  corresponding event handler.
+    693          //
+    694          //*****************************************************************************
+    695          INT32 hci_unsolicited_event_handler(void)
+    696          {
+    697          	UINT32   res = 0;
+    698          	UINT8 *pucReceivedData;
+    699          
+    700          	if (tSLInformation.usEventOrDataReceived != 0)
+    701          	{
+    702          		pucReceivedData = (tSLInformation.pucReceivedData);
+    703          
+    704          		if (*pucReceivedData == HCI_TYPE_EVNT)
+    705          		{			
+    706          
+    707          			// In case unsolicited event received - here the handling finished
+    708          			if (hci_unsol_event_handler((CHARF *)pucReceivedData) == 1)
+    709          			{
+    710          
+    711          				// There was an unsolicited event received - we can release the buffer
+    712          				// and clean the event received 
+    713          				tSLInformation.usEventOrDataReceived = 0;
+    714          
+    715          				res = 1;
+    716          				SpiResumeSpi();
+    717          			}
+    718          		}
+    719          	}
+    720          
+    721          	return res;
+    722          }
+    723          
+    724          //*****************************************************************************
+    725          //
+    726          //!  set_socket_active_status
+    727          //!
+    728          //!  @param Sd
+    729          //!	 @param Status
+    730          //!  @return         none
+    731          //!
+    732          //!  @brief          Check if the socket ID and status are valid and set 
+    733          //!                  accordingly  the global socket status
+    734          //
+    735          //*****************************************************************************
+    736          void set_socket_active_status(INT32 Sd, INT32 Status)
+    737          {
+    738          	if(M_IS_VALID_SD(Sd) && M_IS_VALID_STATUS(Status))
+    739          	{
+    740          		socket_active_status &= ~(1 << Sd);      /* clean socket's mask */
+    741          		socket_active_status |= (Status << Sd); /* set new socket's mask */
+    742          	}
+    743          }
+    744          
+    745          
+    746          //*****************************************************************************
+    747          //
+    748          //!  hci_event_unsol_flowcontrol_handler
+    749          //!
+    750          //!  @param  pEvent  pointer to the string contains parameters for IPERF
+    751          //!  @return         ESUCCESS if successful, EFAIL if an error occurred
+    752          //!
+    753          //!  @brief  Called in case unsolicited event from type
+    754          //!          HCI_EVNT_DATA_UNSOL_FREE_BUFF has received.
+    755          //!				   Keep track on the number of packets transmitted and update the
+    756          //!					 number of free buffer in the SL device.
+    757          //
+    758          //*****************************************************************************
+    759          INT32 hci_event_unsol_flowcontrol_handler(CHARF *pEvent)
+    760          {
+    761          
+    762          	INT32 temp, value;
+    763          	UINT16 i;
+    764          	UINT16  pusNumberOfHandles=0;
+    765          	CHARF *pReadPayload;
+    766          
+    767          	STREAM_TO_UINT16((CHARF *)pEvent,HCI_EVENT_HEADER_SIZE,pusNumberOfHandles);
+    768          	pReadPayload = ((CHARF *)pEvent +
+    769          		HCI_EVENT_HEADER_SIZE + sizeof(pusNumberOfHandles));	
+    770          	temp = 0;
+    771          
+    772          	for(i = 0; i < pusNumberOfHandles ; i++)
+    773          	{
+    774          		STREAM_TO_UINT16(pReadPayload, FLOW_CONTROL_EVENT_FREE_BUFFS_OFFSET, value);
+    775          		temp += value;
+    776          		pReadPayload += FLOW_CONTROL_EVENT_SIZE;  
+    777          	}
+    778          
+    779          	tSLInformation.usNumberOfFreeBuffers += temp;
+    780          	tSLInformation.NumberOfReleasedPackets += temp;
+    781          
+    782          	return(ESUCCESS);
+    783          }
+    784          
+    785          //*****************************************************************************
+    786          //
+    787          //!  get_socket_active_status
+    788          //!
+    789          //!  @param  Sd  Socket IS
+    790          //!  @return     Current status of the socket.   
+    791          //!
+    792          //!  @brief  Retrieve socket status
+    793          //
+    794          //*****************************************************************************
+    795          
+    796          INT32 get_socket_active_status(INT32 Sd)
+    797          {
+    798          	if(M_IS_VALID_SD(Sd))
+    799          	{
+    800          		return (socket_active_status & (1 << Sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
+    801          	}
+    802          	return SOCKET_STATUS_INACTIVE;
+    803          }
+    804          
+    805          //*****************************************************************************
+    806          //
+    807          //!  update_socket_active_status
+    808          //!
+    809          //!  @param  resp_params  Socket IS
+    810          //!  @return     Current status of the socket.   
+    811          //!
+    812          //!  @brief  Retrieve socket status
+    813          //
+    814          //*****************************************************************************
+    815          void update_socket_active_status(CHARF *resp_params)
+    816          {
+    817          	INT32 status, sd;
+    818          
+    819          	STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_SOCKET_OFFSET,sd);
+    820          	STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_STATUS_OFFSET,status);
+    821          
+    822          	if(ERROR_SOCKET_INACTIVE == status)
+    823          	{
+    824          		set_socket_active_status(sd, SOCKET_STATUS_INACTIVE);
+    825          	}
+    826          }
+    827          
+    828          
+    829          //*****************************************************************************
+    830          //
+    831          //!  SimpleLinkWaitEvent
+    832          //!
+    833          //!  @param  usOpcode      command operation code
+    834          //!  @param  pRetParams    command return parameters
+    835          //!
+    836          //!  @return               none
+    837          //!
+    838          //!  @brief                Wait for event, pass it to the hci_event_handler and
+    839          //!                        update the event opcode in a global variable.
+    840          //
+    841          //*****************************************************************************
+    842          
+    843          void SimpleLinkWaitEvent(UINT16 usOpcode, void *pRetParams)
+    844          {
+    845          	// In the blocking implementation the control to caller will be returned only 
+    846          	// after the end of current transaction
+    847          	tSLInformation.usRxEventOpcode = usOpcode;
+    848          	hci_event_handler(pRetParams, 0, 0);
+    849          }
+    850          
+    851          //*****************************************************************************
+    852          //
+    853          //!  SimpleLinkWaitData
+    854          //!
+    855          //!  @param  pBuf       data buffer
+    856          //!  @param  from       from information
+    857          //!  @param  fromlen	from information length
+    858          //!
+    859          //!  @return               none
+    860          //!
+    861          //!  @brief                Wait for data, pass it to the hci_event_handler
+    862          //! 					   and update in a global variable that there is 
+    863          //!						   data to read.
+    864          //
+    865          //*****************************************************************************
+    866          
+    867          void SimpleLinkWaitData(UINT8 *pBuf, UINT8 *from, UINT8 *fromlen)
+    868          {
+    869          	// In the blocking implementation the control to caller will be returned only 
+    870          	// after the end of current transaction, i.e. only after data will be received
+    871          	tSLInformation.usRxDataPending = 1;
+    872          	hci_event_handler(pBuf, from, fromlen);
+    873          }
+    874          
+    875          //*****************************************************************************
+    876          //
+    877          // Close the Doxygen group.
+    878          //! @}
+    879          //
+    880          //*****************************************************************************
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   SimpleLinkWaitData
+        2   -> hci_event_handler
+      2   SimpleLinkWaitEvent
+        2   -> hci_event_handler
+      2   get_socket_active_status
+     24   hci_event_handler
+       24   -- Indirect call
+       24   -> SpiResumeSpi
+       24   -> UINT32_TO_STREAM_f
+       24   -> hci_unsol_event_handler
+       24   -> hci_unsol_handle_patch_request
+       24   -> set_socket_active_status
+     12   hci_event_unsol_flowcontrol_handler
+       12   -> STREAM_TO_UINT16_f
+     56   hci_unsol_event_handler
+       56   -- Indirect call
+       56   -> STREAM_TO_UINT16_f
+       56   -> STREAM_TO_UINT32_f
+       56   -> hci_event_unsol_flowcontrol_handler
+       56   -> set_socket_active_status
+     10   hci_unsol_handle_patch_request
+       10   -- Indirect call
+       10   -> hci_patch_send
+      6   hci_unsolicited_event_handler
+        6   -> SpiResumeSpi
+        6   -> hci_unsol_event_handler
+     10   set_socket_active_status
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Initializer for socket_active_status>
+       6  ?Subroutine0
+       6  ?Subroutine1
+       8  ?Subroutine10
+      14  ?Subroutine11
+      20  ?Subroutine13
+      18  ?Subroutine14
+      14  ?Subroutine15
+      14  ?Subroutine16
+       4  ?Subroutine3
+      18  ?Subroutine4
+       4  ?Subroutine5
+      16  ?Subroutine6
+      14  ?Subroutine9
+       8  SimpleLinkWaitData
+      16  SimpleLinkWaitEvent
+      44  get_socket_active_status
+     652  hci_event_handler
+      74  hci_event_unsol_flowcontrol_handler
+     458  hci_unsol_event_handler
+     144  hci_unsol_handle_patch_request
+      48  hci_unsolicited_event_handler
+       4  localIP
+      86  set_socket_active_status
+       4  socket_active_status
+
+ 
+ 1 686 bytes in segment CODE
+     4 bytes in segment DATA16_I
+     4 bytes in segment DATA16_ID
+     4 bytes in segment DATA16_Z
+ 
+ 1 686 bytes of CODE  memory
+     4 bytes of CONST memory
+     8 bytes of DATA  memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,290 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           12/Dec/2016  09:55:03
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\CC3000HostDriver\hci.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\CC3000HostDriver\hci.c -D MDNS_ADVERTISE_HOST -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lcN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ --diag_suppress Pa039 -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h"
+#        --library_module -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\hci.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\hci.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\CC3000HostDriver\hci.c
+      1          /*****************************************************************************
+      2          *
+      3          *  hci.c  - CC3000 Host Driver Implementation.
+      4          *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
+      5          *
+      6          *  Redistribution and use in source and binary forms, with or without
+      7          *  modification, are permitted provided that the following conditions
+      8          *  are met:
+      9          *
+     10          *    Redistributions of source code must retain the above copyright
+     11          *    notice, this list of conditions and the following disclaimer.
+     12          *
+     13          *    Redistributions in binary form must reproduce the above copyright
+     14          *    notice, this list of conditions and the following disclaimer in the
+     15          *    documentation and/or other materials provided with the   
+     16          *    distribution.
+     17          *
+     18          *    Neither the name of Texas Instruments Incorporated nor the names of
+     19          *    its contributors may be used to endorse or promote products derived
+     20          *    from this software without specific prior written permission.
+     21          *
+     22          *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+     23          *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+     24          *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+     25          *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+     26          *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+     27          *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+     28          *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     29          *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+     30          *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+     31          *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+     32          *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     33          *
+     34          *****************************************************************************/
+     35          
+     36          //*****************************************************************************
+     37          //
+     38          //! \addtogroup hci_app
+     39          //! @{
+     40          //
+     41          //*****************************************************************************
+     42          
+     43          #include "cc3000_common.h"
+     44          #include "hci.h"
+     45          #include "spi.h"
+     46          #include "evnt_handler.h"
+     47          #include "wlan.h"
+     48          
+     49          #define SL_PATCH_PORTION_SIZE		(1000)
+     50          
+     51          
+     52          //*****************************************************************************
+     53          //
+     54          //!  hci_command_send
+     55          //!
+     56          //!  @param  usOpcode     command operation code
+     57          //!  @param  pucBuff      pointer to the command's arguments buffer
+     58          //!  @param  ucArgsLength length of the arguments
+     59          //!
+     60          //!  @return              none
+     61          //!
+     62          //!  @brief               Initiate an HCI command.
+     63          //
+     64          //*****************************************************************************
+     65          UINT16 hci_command_send(UINT16 usOpcode, UINT8 *pucBuff, UINT8 ucArgsLength)
+     66          { 
+     67          	UINT8 *stream;
+     68          
+     69          	stream = (pucBuff + SPI_HEADER_SIZE);
+     70          
+     71          	UINT8_TO_STREAM(stream, HCI_TYPE_CMND);
+     72          	stream = UINT16_TO_STREAM(stream, usOpcode);
+     73          	UINT8_TO_STREAM(stream, ucArgsLength);
+     74          
+     75          	//Update the opcode of the event we will be waiting for
+     76          	SpiWrite(pucBuff, ucArgsLength + SIMPLE_LINK_HCI_CMND_HEADER_SIZE);
+     77          
+     78          	return(0);
+     79          }
+     80          
+     81          //*****************************************************************************
+     82          //
+     83          //!  hci_data_send
+     84          //!
+     85          //!  @param  usOpcode        command operation code
+     86          //!	 @param  ucArgs					 pointer to the command's arguments buffer
+     87          //!  @param  usArgsLength    length of the arguments
+     88          //!  @param  ucTail          pointer to the data buffer
+     89          //!  @param  usTailLength    buffer length
+     90          //!
+     91          //!  @return none
+     92          //!
+     93          //!  @brief              Initiate an HCI data write operation
+     94          //
+     95          //*****************************************************************************
+     96          INT32 hci_data_send(UINT8 ucOpcode, 
+     97          	UINT8 *ucArgs,
+     98          	UINT16 usArgsLength, 
+     99          	UINT16 usDataLength,
+    100          	const UINT8 *ucTail,
+    101          	UINT16 usTailLength)
+    102          {
+    103          	UINT8 *stream;
+    104          
+    105          	stream = ((ucArgs) + SPI_HEADER_SIZE);
+    106          
+    107          	UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
+    108          	UINT8_TO_STREAM(stream, ucOpcode);
+    109          	UINT8_TO_STREAM(stream, usArgsLength);
+    110          	stream = UINT16_TO_STREAM(stream, usArgsLength + usDataLength + usTailLength);
+    111          
+    112          	// Send the packet over the SPI
+    113          	SpiWrite(ucArgs, SIMPLE_LINK_HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
+    114          
+    115          	return(ESUCCESS);
+    116          }
+    117          
+    118          
+    119          //*****************************************************************************
+    120          //
+    121          //!  hci_data_command_send
+    122          //!
+    123          //!  @param  usOpcode      command operation code
+    124          //!  @param  pucBuff       pointer to the data buffer
+    125          //!  @param  ucArgsLength  arguments length
+    126          //!  @param  ucDataLength  data length
+    127          //!
+    128          //!  @return none
+    129          //!
+    130          //!  @brief              Prepeare HCI header and initiate an HCI data write operation
+    131          //
+    132          //*****************************************************************************
+    133          void hci_data_command_send(UINT16 usOpcode, UINT8 *pucBuff, UINT8 ucArgsLength,UINT16 ucDataLength)
+    134          { 
+    135          	UINT8 *stream = (pucBuff + SPI_HEADER_SIZE);
+    136          
+    137          	UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
+    138          	UINT8_TO_STREAM(stream, usOpcode);
+    139          	UINT8_TO_STREAM(stream, ucArgsLength);
+    140          	stream = UINT16_TO_STREAM(stream, ucArgsLength + ucDataLength);
+    141          
+    142          	// Send the command over SPI on data channel
+    143          	SpiWrite(pucBuff, ucArgsLength + ucDataLength + SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE);
+    144          
+    145          	return;
+    146          }
+    147          
+    148          //*****************************************************************************
+    149          //
+    150          //!  hci_patch_send
+    151          //!
+    152          //!  @param  usOpcode      command operation code
+    153          //!  @param  pucBuff       pointer to the command's arguments buffer
+    154          //!  @param  patch         pointer to patch content buffer 
+    155          //!  @param  usDataLength  data length
+    156          //!
+    157          //!  @return              none
+    158          //!
+    159          //!  @brief               Prepeare HCI header and initiate an HCI patch write operation
+    160          //
+    161          //*****************************************************************************
+    162          void hci_patch_send(UINT8 ucOpcode, UINT8 *pucBuff, CHARF *patch, UINT16 usDataLength)
+    163          { 
+    164          	UINT8 *data_ptr = (pucBuff + SPI_HEADER_SIZE);
+    165          	UINT16 usTransLength;
+    166          	UINT8 *stream = (pucBuff + SPI_HEADER_SIZE);
+    167          
+    168          	UINT8_TO_STREAM(stream, HCI_TYPE_PATCH);
+    169          	UINT8_TO_STREAM(stream, ucOpcode);
+    170          	stream = UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
+    171          
+    172          	if (usDataLength <= SL_PATCH_PORTION_SIZE)
+    173          	{
+    174          		UINT16_TO_STREAM(stream, usDataLength);
+    175          		stream = UINT16_TO_STREAM(stream, usDataLength);
+    176          		memcpy((pucBuff + SPI_HEADER_SIZE) + HCI_PATCH_HEADER_SIZE, patch, usDataLength);
+    177          
+    178          		// Update the opcode of the event we will be waiting for
+    179          		SpiWrite(pucBuff, usDataLength + HCI_PATCH_HEADER_SIZE);
+    180          	}
+    181          	else
+    182          	{
+    183          
+    184          		usTransLength = (usDataLength/SL_PATCH_PORTION_SIZE);
+    185          		UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE + usTransLength*SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
+    186          		stream = UINT16_TO_STREAM(stream, SL_PATCH_PORTION_SIZE);
+    187          		memcpy(pucBuff + SPI_HEADER_SIZE + HCI_PATCH_HEADER_SIZE, patch, SL_PATCH_PORTION_SIZE);
+    188          		usDataLength -= SL_PATCH_PORTION_SIZE;
+    189          		patch += SL_PATCH_PORTION_SIZE;
+    190          
+    191          		// Update the opcode of the event we will be waiting for
+    192          		SpiWrite(pucBuff, SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
+    193          
+    194          		while (usDataLength)
+    195          		{
+    196          			if (usDataLength <= SL_PATCH_PORTION_SIZE)
+    197          			{
+    198          				usTransLength = usDataLength;
+    199          				usDataLength = 0;
+    200          
+    201          			}
+    202          			else
+    203          			{
+    204          				usTransLength = SL_PATCH_PORTION_SIZE;
+    205          				usDataLength -= usTransLength;
+    206          			}
+    207          
+    208          			*(UINT16 *)data_ptr = usTransLength;
+    209          			memcpy(data_ptr + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE, patch, usTransLength);
+    210          			patch += usTransLength;
+    211          
+    212          			// Update the opcode of the event we will be waiting for
+    213          			SpiWrite((UINT8 *)data_ptr, usTransLength + sizeof(usTransLength));
+    214          		}
+    215          	}
+    216          }
+    217          
+    218          //*****************************************************************************
+    219          //
+    220          // Close the Doxygen group.
+    221          //! @}
+    222          //
+    223          //
+    224          //*****************************************************************************
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      6   hci_command_send
+        6   -> SpiWrite
+        6   -> UINT16_TO_STREAM_f
+      8   hci_data_command_send
+        8   -> SpiWrite
+        8   -> UINT16_TO_STREAM_f
+      8   hci_data_send
+        8   -> SpiWrite
+        8   -> UINT16_TO_STREAM_f
+     16   hci_patch_send
+       16   -> SpiWrite
+       16   -> UINT16_TO_STREAM_f
+       16   -> memcpy
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      12  ?Subroutine0
+      50  hci_command_send
+      60  hci_data_command_send
+      70  hci_data_send
+     198  hci_patch_send
+
+ 
+ 390 bytes in segment CODE
+ 
+ 390 bytes of CODE memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,522 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           12/Dec/2016  09:55:04
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\CC3000HostDriver\netapp.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\CC3000HostDriver\netapp.c -D MDNS_ADVERTISE_HOST
+#        -D CC3000_UNENCRYPTED_SMART_CONFIG -lcN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ --diag_suppress Pa039 -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h"
+#        --library_module -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\netapp.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\netapp.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\CC3000HostDriver\netapp.c
+      1          /*****************************************************************************
+      2          *
+      3          *  netapp.c  - CC3000 Host Driver Implementation.
+      4          *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
+      5          *
+      6          *  Redistribution and use in source and binary forms, with or without
+      7          *  modification, are permitted provided that the following conditions
+      8          *  are met:
+      9          *
+     10          *    Redistributions of source code must retain the above copyright
+     11          *    notice, this list of conditions and the following disclaimer.
+     12          *
+     13          *    Redistributions in binary form must reproduce the above copyright
+     14          *    notice, this list of conditions and the following disclaimer in the
+     15          *    documentation and/or other materials provided with the   
+     16          *    distribution.
+     17          *
+     18          *    Neither the name of Texas Instruments Incorporated nor the names of
+     19          *    its contributors may be used to endorse or promote products derived
+     20          *    from this software without specific prior written permission.
+     21          *
+     22          *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+     23          *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+     24          *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+     25          *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+     26          *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+     27          *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+     28          *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     29          *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+     30          *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+     31          *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+     32          *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     33          *
+     34          *****************************************************************************/
+     35          #include <string.h>
+     36          #include "netapp.h"
+     37          #include "hci.h"
+     38          #include "socket.h"
+     39          #include "evnt_handler.h"
+     40          #include "nvmem.h"
+     41          
+     42          #define MIN_TIMER_VAL_SECONDS      10
+     43          #define MIN_TIMER_SET(t)    if ((0 != t) && (t < MIN_TIMER_VAL_SECONDS)) \
+     44          							{ \
+     45          							t = MIN_TIMER_VAL_SECONDS; \
+     46          							}
+     47          
+     48          
+     49          #define NETAPP_DHCP_PARAMS_LEN 				(20)
+     50          #define NETAPP_SET_TIMER_PARAMS_LEN 		(20)
+     51          #define NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN	(4)
+     52          #define NETAPP_PING_SEND_PARAMS_LEN			(16)
+     53          
+     54          
+     55          //*****************************************************************************
+     56          //
+     57          //!  netapp_config_mac_adrress
+     58          //!
+     59          //!  @param  mac   device mac address, 6 bytes. Saved: yes 
+     60          //!
+     61          //!  @return       return on success 0, otherwise error.
+     62          //!
+     63          //!  @brief        Configure device MAC address and store it in NVMEM. 
+     64          //!                The value of the MAC address configured through the API will
+     65          //!		             be stored in CC3000 non volatile memory, thus preserved 
+     66          //!                over resets.
+     67          //
+     68          //*****************************************************************************
+     69          INT32 netapp_config_mac_adrress(UINT8 * mac)
+     70          {
+     71          	return  nvmem_set_mac_address(mac);
+     72          }
+     73          
+     74          //*****************************************************************************
+     75          //
+     76          //!  netapp_dhcp
+     77          //!
+     78          //!  @param  aucIP               device mac address, 6 bytes. Saved: yes 
+     79          //!  @param  aucSubnetMask       device mac address, 6 bytes. Saved: yes 
+     80          //!  @param  aucDefaultGateway   device mac address, 6 bytes. Saved: yes 
+     81          //!  @param  aucDNSServer        device mac address, 6 bytes. Saved: yes 
+     82          //!
+     83          //!  @return       return on success 0, otherwise error.
+     84          //!
+     85          //!  @brief       netapp_dhcp is used to configure the network interface, 
+     86          //!               static or dynamic (DHCP).\n In order to activate DHCP mode, 
+     87          //!               aucIP, aucSubnetMask, aucDefaultGateway must be 0.
+     88          //!               The default mode of CC3000 is DHCP mode.
+     89          //!               Note that the configuration is saved in non volatile memory
+     90          //!               and thus preserved over resets.
+     91          //!	 
+     92          //! @note         If the mode is altered a reset of CC3000 device is required 
+     93          //!               in order to apply changes.\nAlso note that asynchronous event 
+     94          //!               of DHCP_EVENT, which is generated when an IP address is 
+     95          //!               allocated either by the DHCP server or due to static 
+     96          //!               allocation is generated only upon a connection to the 
+     97          //!               AP was established. 
+     98          //!
+     99          //*****************************************************************************
+    100          INT32 netapp_dhcp(UINT32 *aucIP, UINT32 *aucSubnetMask,UINT32 *aucDefaultGateway, UINT32 *aucDNSServer)
+    101          {
+    102          	INT8 scRet;
+    103          	UINT8 *ptr;
+    104          	UINT8 *args;
+    105          
+    106          	scRet = EFAIL;
+    107          	ptr = tSLInformation.pucTxCommandBuffer;
+    108          	args = (ptr + HEADERS_SIZE_CMD);
+    109          
+    110          	// Fill in temporary command buffer
+    111          	ARRAY_TO_STREAM(args,aucIP,4);
+    112          	ARRAY_TO_STREAM(args,aucSubnetMask,4);
+    113          	ARRAY_TO_STREAM(args,aucDefaultGateway,4);
+    114          	args = UINT32_TO_STREAM(args, 0);
+    115          	ARRAY_TO_STREAM(args,aucDNSServer,4);
+    116          
+    117          	// Initiate a HCI command
+    118          	hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
+    119          
+    120          	// Wait for command complete event
+    121          	SimpleLinkWaitEvent(HCI_NETAPP_DHCP, &scRet);
+    122          
+    123          	return(scRet);
+    124          }
+    125          
+    126          
+    127          //*****************************************************************************
+    128          //
+    129          //!  netapp_timeout_values
+    130          //!
+    131          //!  @param  aucDHCP    DHCP lease time request, also impact 
+    132          //!                     the DHCP renew timeout. Range: [0-0xffffffff] seconds,
+    133          //!                     0 or 0xffffffff == infinity lease timeout.
+    134          //!                     Resolution:10 seconds. Influence: only after 
+    135          //!                     reconnecting to the AP. 
+    136          //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 10 seconds.
+    137          //!                     The parameter is saved into the CC3000 NVMEM. 
+    138          //!                     The default value on CC3000 is 14400 seconds.
+    139          //!	 
+    140          //!  @param  aucARP     ARP refresh timeout, if ARP entry is not updated by
+    141          //!                     incoming packet, the ARP entry will be  deleted by
+    142          //!                     the end of the timeout. 
+    143          //!                     Range: [0-0xffffffff] seconds, 0 == infinity ARP timeout
+    144          //!                     Resolution: 10 seconds. Influence: on runtime.
+    145          //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 10 seconds
+    146          //!                     The parameter is saved into the CC3000 NVMEM. 
+    147          //!	                    The default value on CC3000 is 3600 seconds.
+    148          //!
+    149          //!  @param  aucKeepalive   Keepalive event sent by the end of keepalive timeout
+    150          //!                         Range: [0-0xffffffff] seconds, 0 == infinity timeout
+    151          //!                         Resolution: 10 seconds.
+    152          //!                         Influence: on runtime.
+    153          //!                         Minimal bound value: MIN_TIMER_VAL_SECONDS - 10 sec
+    154          //!                         The parameter is saved into the CC3000 NVMEM. 
+    155          //!                         The default value on CC3000 is 10 seconds.
+    156          //!
+    157          //!  @param  aucInactivity   Socket inactivity timeout, socket timeout is
+    158          //!                          refreshed by incoming or outgoing packet, by the
+    159          //!                          end of the socket timeout the socket will be closed
+    160          //!                          Range: [0-0xffffffff] sec, 0 == infinity timeout.
+    161          //!                          Resolution: 10 seconds. Influence: on runtime.
+    162          //!                          Minimal bound value: MIN_TIMER_VAL_SECONDS - 10 sec
+    163          //!                          The parameter is saved into the CC3000 NVMEM. 
+    164          //!	                         The default value on CC3000 is 60 seconds.
+    165          //!
+    166          //!  @return       return on success 0, otherwise error.
+    167          //!
+    168          //!  @brief       Set new timeout values. Function set new timeout values for: 
+    169          //!               DHCP lease timeout, ARP  refresh timeout, keepalive event 
+    170          //!               timeout and socket inactivity timeout 
+    171          //!	 
+    172          //! @note         If a parameter set to non zero value which is less than 10s,
+    173          //!               it will be set automatically to 10s.
+    174          //!
+    175          //*****************************************************************************
+    176          
+    177          //#ifndef CC3000_TINY_DRIVER
+    178          INT32 netapp_timeout_values(UINT32 *aucDHCP, UINT32 *aucARP,UINT32 *aucKeepalive,	UINT32 *aucInactivity)
+    179          {
+    180          	INT8 scRet;
+    181          	UINT8 *ptr;
+    182          	UINT8 *args;
+    183          
+    184          	scRet = EFAIL;
+    185          	ptr = tSLInformation.pucTxCommandBuffer;
+    186          	args = (ptr + HEADERS_SIZE_CMD);
+    187          
+    188          	// Set minimal values of timers 
+    189          	MIN_TIMER_SET(*aucDHCP)
+    190          		MIN_TIMER_SET(*aucARP)
+    191          		MIN_TIMER_SET(*aucKeepalive)
+    192          		MIN_TIMER_SET(*aucInactivity)
+    193          
+    194          		// Fill in temporary command buffer
+    195          		args = UINT32_TO_STREAM(args, *aucDHCP);
+    196          	args = UINT32_TO_STREAM(args, *aucARP);
+    197          	args = UINT32_TO_STREAM(args, *aucKeepalive);
+    198          	args = UINT32_TO_STREAM(args, *aucInactivity);
+    199          
+    200          	// Initiate a HCI command
+    201          	hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
+    202          
+    203          	// Wait for command complete event
+    204          	SimpleLinkWaitEvent(HCI_NETAPP_SET_TIMERS, &scRet);
+    205          
+    206          	return(scRet);
+    207          }
+    208          //#endif
+    209          
+    210          
+    211          //*****************************************************************************
+    212          //
+    213          //!  netapp_ping_send
+    214          //!
+    215          //!  @param  ip              destination IP address
+    216          //!  @param  pingAttempts    number of echo requests to send
+    217          //!  @param  pingSize        send buffer size which may be up to 1400 bytes 
+    218          //!  @param  pingTimeout     Time to wait for a response,in milliseconds.
+    219          //!
+    220          //!  @return       return on success 0, otherwise error.
+    221          //!
+    222          //!  @brief       send ICMP ECHO_REQUEST to network hosts 
+    223          //!	 
+    224          //! @note         If an operation finished successfully asynchronous ping report 
+    225          //!               event will be generated. The report structure is as defined
+    226          //!               by structure netapp_pingreport_args_t.
+    227          //!
+    228          //! @warning      Calling this function while a previous Ping Requests are in 
+    229          //!               progress will stop the previous ping request.
+    230          //*****************************************************************************
+    231          
+    232          #ifndef CC3000_TINY_DRIVER
+    233          INT32
+    234          	netapp_ping_send(UINT32 *ip, UINT32 ulPingAttempts, UINT32 ulPingSize, UINT32 ulPingTimeout)
+    235          {
+    236          	INT8 scRet;
+    237          	UINT8 *ptr, *args;
+    238          
+    239          	scRet = EFAIL;
+    240          	ptr = tSLInformation.pucTxCommandBuffer;
+    241          	args = (ptr + HEADERS_SIZE_CMD);
+    242          
+    243          	// Fill in temporary command buffer
+    244          	args = UINT32_TO_STREAM(args, *ip);
+    245          	args = UINT32_TO_STREAM(args, ulPingAttempts);
+    246          	args = UINT32_TO_STREAM(args, ulPingSize);
+    247          	args = UINT32_TO_STREAM(args, ulPingTimeout);
+    248          
+    249          	// Initiate a HCI command
+    250          	hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
+    251          
+    252          	// Wait for command complete event
+    253          	SimpleLinkWaitEvent(HCI_NETAPP_PING_SEND, &scRet);
+    254          
+    255          	return(scRet);
+    256          }
+    257          #endif
+    258          
+    259          //*****************************************************************************
+    260          //
+    261          //!  netapp_ping_report
+    262          //!
+    263          //!  @param  none
+    264          //!
+    265          //!  @return  none
+    266          //!
+    267          //!  @brief   Request for ping status. This API triggers the CC3000 to send 
+    268          //!           asynchronous events: HCI_EVNT_WLAN_ASYNC_PING_REPORT.
+    269          //!           This event will carry  the report structure:
+    270          //!           netapp_pingreport_args_t. This structure is filled in with ping
+    271          //!           results up till point of triggering API.
+    272          //!           netapp_pingreport_args_t:\n packets_sent - echo sent,
+    273          //!           packets_received - echo reply, min_round_time - minimum
+    274          //!           round time, max_round_time - max round time,
+    275          //!           avg_round_time - average round time
+    276          //!	 
+    277          //! @note     When a ping operation is not active, the returned structure 
+    278          //!           fields are 0.
+    279          //!
+    280          //*****************************************************************************
+    281          
+    282          
+    283          #ifndef CC3000_TINY_DRIVER
+    284          void netapp_ping_report()
+    285          {
+    286          	UINT8 *ptr;
+    287          	ptr = tSLInformation.pucTxCommandBuffer;
+    288          	INT8 scRet;
+    289          
+    290          	scRet = EFAIL;
+    291          
+    292          	// Initiate a HCI command
+    293          	hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
+    294          
+    295          	// Wait for command complete event
+    296          	SimpleLinkWaitEvent(HCI_NETAPP_PING_REPORT, &scRet); 
+    297          }
+    298          #endif
+    299          
+    300          //*****************************************************************************
+    301          //
+    302          //!  netapp_ping_stop
+    303          //!
+    304          //!  @param  none
+    305          //!
+    306          //!  @return  On success, zero is returned. On error, -1 is returned.      
+    307          //!
+    308          //!  @brief   Stop any ping request.
+    309          //!	 
+    310          //!
+    311          //*****************************************************************************
+    312          
+    313          #ifndef CC3000_TINY_DRIVER
+    314          INT32 netapp_ping_stop()
+    315          {
+    316          	INT8 scRet;
+    317          	UINT8 *ptr;
+    318          
+    319          	scRet = EFAIL;
+    320          	ptr = tSLInformation.pucTxCommandBuffer;
+    321          
+    322          	// Initiate a HCI command
+    323          	hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
+    324          
+    325          	// Wait for command complete event
+    326          	SimpleLinkWaitEvent(HCI_NETAPP_PING_STOP, &scRet);
+    327          
+    328          	return(scRet);
+    329          }
+    330          #endif
+    331          
+    332          //*****************************************************************************
+    333          //
+    334          //!  netapp_ipconfig
+    335          //!
+    336          //!  @param[out]  ipconfig  This argument is a pointer to a 
+    337          //!                         tNetappIpconfigRetArgs structure. This structure is
+    338          //!                         filled in with the network interface configuration.
+    339          //!                         tNetappIpconfigRetArgs:\n aucIP - ip address,
+    340          //!                         aucSubnetMask - mask, aucDefaultGateway - default
+    341          //!                         gateway address, aucDHCPServer - dhcp server address
+    342          //!                         aucDNSServer - dns server address, uaMacAddr - mac
+    343          //!                         address, uaSSID - connected AP ssid
+    344          //!
+    345          //!  @return  none
+    346          //!
+    347          //!  @brief   Obtain the CC3000 Network interface information.
+    348          //!           Note that the information is available only after the WLAN
+    349          //!       		connection was established. Calling this function before
+    350          //!           associated, will cause non-defined values to be returned.
+    351          //!	 
+    352          //! @note     The function is useful for figuring out the IP Configuration of
+    353          //!       		the device when DHCP is used and for figuring out the SSID of
+    354          //!       		the Wireless network the device is associated with.
+    355          //!
+    356          //*****************************************************************************
+    357          
+    358          #ifndef CC3000_TINY_DRIVER
+    359          void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+    360          {
+    361          	UINT8 *ptr;
+    362          
+    363          	ptr = tSLInformation.pucTxCommandBuffer;
+    364          
+    365          	// Initiate a HCI command
+    366          	hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
+    367          
+    368          	// Wait for command complete event
+    369          	SimpleLinkWaitEvent(HCI_NETAPP_IPCONFIG, ipconfig );
+    370          
+    371          }
+    372          #else
+    373          void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+    374          {
+    375          
+    376          }
+    377          #endif
+    378          
+    379          //*****************************************************************************
+    380          //
+    381          //!  netapp_arp_flush
+    382          //!
+    383          //!  @param  none
+    384          //!
+    385          //!  @return  none
+    386          //!
+    387          //!  @brief  Flushes ARP table
+    388          //!
+    389          //*****************************************************************************
+    390          
+    391          #ifndef CC3000_TINY_DRIVER
+    392          INT32 netapp_arp_flush(void)
+    393          {
+    394          	INT8 scRet;
+    395          	UINT8 *ptr;
+    396          
+    397          	scRet = EFAIL;
+    398          	ptr = tSLInformation.pucTxCommandBuffer;
+    399          
+    400          	// Initiate a HCI command
+    401          	hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
+    402          
+    403          	// Wait for command complete event
+    404          	SimpleLinkWaitEvent(HCI_NETAPP_ARP_FLUSH, &scRet);
+    405          
+    406          	return(scRet);
+    407          }
+    408          #endif
+    409          
+    410          //*****************************************************************************
+    411          //
+    412          //!  netapp_set_debug_level
+    413          //!
+    414          //!  @param[in]      level    debug level. Bitwise [0-8],
+    415          //!                         0(disable)or 1(enable).\n Bitwise map: 0 - Critical
+    416          //!                         message, 1 information message, 2 - core messages, 3 -
+    417          //!                         HCI messages, 4 - Network stack messages, 5 - wlan
+    418          //!                         messages, 6 - wlan driver messages, 7 - epprom messages,
+    419          //!                         8 - general messages. Default: 0x13f. Saved: no
+    420          //!
+    421          //!  @return  On success, zero is returned. On error, -1 is returned
+    422          //!
+    423          //!  @brief   Debug messages sent via the UART debug channel, this function
+    424          //!              enable/disable the debug level
+    425          //!
+    426          //*****************************************************************************
+    427          
+    428          
+    429          #ifndef CC3000_TINY_DRIVER
+    430          INT32 netapp_set_debug_level(UINT32 ulLevel)
+    431          {
+    432          	INT8 scRet;    
+    433          	UINT8 *ptr, *args;
+    434          
+    435          	scRet = EFAIL;
+    436          	ptr = tSLInformation.pucTxCommandBuffer;
+    437          	args = (ptr + HEADERS_SIZE_CMD);
+    438          
+    439          	//
+    440          	// Fill in temporary command buffer
+    441          	//
+    442          	args = UINT32_TO_STREAM(args, ulLevel);
+    443          
+    444          
+    445          	//
+    446          	// Initiate a HCI command
+    447          	//
+    448          	hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, ptr, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
+    449          
+    450          	//
+    451          	// Wait for command complete event
+    452          	//
+    453          	SimpleLinkWaitEvent(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
+    454          
+    455          	return(scRet);
+    456          
+    457          }
+    458          #endif
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   netapp_config_mac_adrress
+        2   -> nvmem_set_mac_address
+     12   netapp_dhcp
+       12   -> SimpleLinkWaitEvent
+       12   -> UINT32_TO_STREAM_f
+       12   -> hci_command_send
+      2   netapp_ipconfig
+     18   netapp_timeout_values
+       18   -> SimpleLinkWaitEvent
+       18   -> UINT32_TO_STREAM_f
+       18   -> hci_command_send
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      20  ?Subroutine0
+      10  netapp_config_mac_adrress
+     138  netapp_dhcp
+       2  netapp_ipconfig
+     220  netapp_timeout_values
+
+ 
+ 390 bytes in segment CODE
+ 
+ 390 bytes of CODE memory
+
+Errors: none
+Warnings: none

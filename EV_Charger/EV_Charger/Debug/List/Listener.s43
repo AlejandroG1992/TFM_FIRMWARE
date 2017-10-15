@@ -1,0 +1,312 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:43
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\Listener.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\Listener.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Listener.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME Listener
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?SwitchKey8
+        EXTERN ?Epilogue4
+        EXTERN ?ClearMemoryBytes
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBWEAK TACCR1
+        PUBLIC checkMessage
+
+        EXTERN read_Identifier
+        EXTERN pucCC3000_Rx_Buffer
+        EXTERN Charger_State
+        EXTERN sendMessage
+        EXTERN set_Registers
+        EXTERN powerSummation
+        EXTERN WDT_counter
+
+// Z:\EV_Charger\Source\EV_Charger\Listener.c
+//    1 #include "Wifi.h" 
+//    2 #include "Wattmeter.h" 
+//    3 #include <msp430.h>
+
+        ASEGN DATA16_AN:DATA:NOROOT,0174H
+// unsigned short volatile TACCR1
+TACCR1:
+        DS8 2
+//    4 #include "board.h"
+//    5 #include "Analog_sampling.h"
+//    6 #include "ControlPilot.h"
+//    7 #include "Charger_States.h"
+//    8 #include "Listener.h"
+//    9 #include "FlashMemory.h"
+//   10 #include "SmartConfig.h"
+//   11 #include "Wattmeter.h"
+//   12 #include "Wifi.h"
+//   13 #include "nvmem.h"
+//   14 #include "Main.h"
+//   15 #include <msp430.h>
+//   16 
+//   17 
+//   18 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   19 void checkMessage()
+checkMessage:
+//   20 {     
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        PUSH.W  R9
+        SUB.W   #0x8, SP
+//   21   char answer[8]={0,0,0,0,0,0,0,0};
+        MOV.W   SP, R12
+        MOV.W   #0x8, R14
+        CALL    #?ClearMemoryBytes
+//   22   answer[1]=read_Identifier();
+        CALL    #read_Identifier
+        MOV.B   R12, 0x1(SP)
+//   23            
+//   24   switch (((char)pucCC3000_Rx_Buffer[0])) {
+        MOV.B   &pucCC3000_Rx_Buffer, R14
+        SUB.B   #0x0, R14
+        JEQ     ??checkMessage_2
+        SUB.B   #0x2, R14
+        JEQ     ??checkMessage_3
+        SUB.B   #0x4, R14
+        JEQ     ??checkMessage_4
+        SUB.B   #0x1, R14
+        JEQ     ??checkMessage_5
+        SUB.B   #0x1, R14
+        JEQ     ??checkMessage_6
+        SUB.B   #0x1, R14
+        JEQ     ??checkMessage_7
+        SUB.B   #0x1, R14
+        JEQ     ??checkMessage_8
+        JMP     ??checkMessage_9
+//   25        
+//   26         
+//   27         //Vinculate charger
+//   28         case 0:   //Confirm Vinculation, Save Charger Identifier
+//   29           
+//   30           if(Charger_State==SmartConfig_Assign)
+??checkMessage_2:
+        CMP.B   #0x6, &Charger_State
+        JNE     ??checkMessage_9
+//   31           {
+//   32              answer[0]=0;
+        MOV.B   #0x0, 0(SP)
+//   33              answer[1]=pucCC3000_Rx_Buffer[1];
+        MOV.B   &pucCC3000_Rx_Buffer + 1, 0x1(SP)
+//   34              
+//   35              sendMessage(answer);  //Confirm Vinculation    
+        MOV.W   SP, R12
+        CALL    #sendMessage
+//   36             // __delay_cycles(1000000); 
+//   37              Charger_State=Not_Connected;
+        MOV.B   #0x0, &Charger_State
+//   38              set_Registers(pucCC3000_Rx_Buffer[1]);
+        MOV.B   &pucCC3000_Rx_Buffer + 1, R12
+        CALL    #set_Registers
+        JMP     ??checkMessage_9
+//   39           }
+//   40           break;
+//   41         case 1:  //Nothing
+//   42           break;
+//   43           
+//   44         case 2: //Read Active Energy Consumption 
+//   45                 
+//   46                 answer[0]=2;
+??checkMessage_3:
+        MOV.B   #0x2, 0(SP)
+//   47                 
+//   48                 
+//   49                 answer[7]= (powerSummation>>56)&(0xFF);                
+        MOV.W   #powerSummation, R15
+        MOV.W   @R15+, R12
+        MOV.W   @R15+, R13
+        MOV.W   @R15+, R14
+        MOV.W   @R15+, R15
+        MOV.W   R15, R11
+        SWPB    R11
+        MOV.B   R11, 0x7(SP)
+//   50                 answer[6] = (powerSummation>>48)&(0xFF);
+        MOV.B   R15, 0x6(SP)
+//   51                 answer[5] = (powerSummation>>40)&(0xFF);
+        MOV.W   R14, R8
+        MOV.W   R15, R11
+        SWPB    R11
+        SWPB    R8
+        XOR.B   R11, R8
+        XOR.B   R11, R8
+        MOV.B   R8, 0x5(SP)
+//   52                 answer[4] = (powerSummation>>32)&(0xFF);
+        MOV.B   R14, 0x4(SP)
+//   53                 answer[3] = (powerSummation>>24)&(0xFF);
+        MOV.W   R13, R10
+        SWPB    R10
+        MOV.B   R10, 0x3(SP)
+//   54                 answer[2] = (powerSummation>>16)&(0xFF);
+        MOV.B   R13, 0x2(SP)
+//   55                 
+//   56                
+//   57                 sendMessage(answer);
+        JMP     ??checkMessage_0
+//   58           break;
+//   59         case 3:   //Read Reactive Energy Consumption   
+//   60           
+//   61           break;
+//   62         case 4:  //Read Average Power   
+//   63           
+//   64           break;
+//   65           
+//   66         case 5: //Read Maximum Power
+//   67           
+//   68           break;
+//   69         
+//   70         case 6:   //Reset Wattmeter
+//   71                 answer[0]=6;
+??checkMessage_4:
+        MOV.B   #0x6, 0(SP)
+//   72                 powerSummation=0;
+        MOV.W   #0x0, &powerSummation
+        MOV.W   #0x0, &powerSummation + 2
+        MOV.W   #0x0, &powerSummation + 4
+        MOV.W   #0x0, &powerSummation + 6
+//   73                 sendMessage(answer);  
+        JMP     ??checkMessage_0
+//   74           break; 
+//   75           
+//   76         case 7:   //Read car status
+//   77                 WDT_counter=0;
+??checkMessage_5:
+        MOV.B   #0x0, &WDT_counter
+//   78                 answer[0]=7;                
+        MOV.B   #0x7, 0(SP)
+//   79                 answer[2] = Charger_State;
+        MOV.B   &Charger_State, 0x2(SP)
+//   80                 sendMessage(answer);  
+        JMP     ??checkMessage_0
+//   81           break;
+//   82         case 8: //Restore from Error State 
+//   83                 Charger_State=Not_Connected;
+??checkMessage_6:
+        MOV.B   #0x0, &Charger_State
+//   84                 answer[0]=8;            
+        MOV.B   #0x8, 0(SP)
+//   85                 sendMessage(answer);
+        JMP     ??checkMessage_0
+//   86           break;   
+//   87         case 9:  //Set Max Power
+//   88                 answer[0]=9;
+??checkMessage_7:
+        MOV.B   #0x9, 0(SP)
+//   89                 
+//   90                 answer[7]=pucCC3000_Rx_Buffer[1];
+        MOV.B   &pucCC3000_Rx_Buffer + 1, R15
+        MOV.B   R15, 0x7(SP)
+//   91                 if((unsigned short) pucCC3000_Rx_Buffer[1]<3)
+        CMP.B   #0x3, R15
+        JC      ??checkMessage_10
+//   92                       TACCR1=8000;
+        MOV.W   #0x1f40, &0x174
+        JMP     ??checkMessage_0
+//   93                 else
+//   94                       TA0CCR1 = 80*((unsigned short) pucCC3000_Rx_Buffer[1]); 
+??checkMessage_10:
+        RLA.W   R15
+        RLA.W   R15
+        RLA.W   R15
+        RLA.W   R15
+        MOV.W   R15, R11
+        RLA.W   R15
+        RLA.W   R15
+        ADD.W   R11, R15
+        MOV.W   R15, &0x174
+//   95                                 
+//   96                 sendMessage(answer);  
+        JMP     ??checkMessage_0
+//   97           
+//   98           break; 
+//   99          case 10:  //Ping to Identifier IP Charger (Broadcast) or check connection
+//  100              if(pucCC3000_Rx_Buffer[1]==read_Identifier())
+??checkMessage_8:
+        CALL    #read_Identifier
+        CMP.B   R12, &pucCC3000_Rx_Buffer + 1
+        JNE     ??checkMessage_9
+//  101              {
+//  102                 answer[0]=10;  
+        MOV.B   #0xa, 0(SP)
+//  103                 
+//  104                 sendMessage(answer);  
+??checkMessage_0:
+        MOV.W   SP, R12
+        CALL    #sendMessage
+//  105              }
+//  106           break;
+//  107           
+//  108           
+//  109   default:
+//  110     break;
+//  111   }
+//  112 }
+??checkMessage_9:
+        ADD.W   #0x8, SP
+        BR      #?Epilogue4
+        REQUIRE TACCR1
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        RSEG DATA16_C:CONST:SORT:NOROOT(0)
+        DC8 0, 0, 0, 0, 0, 0, 0, 0
+
+        END
+//  113 
+//  114 
+//  115 
+// 
+// 290 bytes in segment CODE
+//   2 bytes in segment DATA16_AN
+//   8 bytes in segment DATA16_C
+// 
+// 290 bytes of CODE  memory
+//   8 bytes of CONST memory
+//   0 bytes of DATA  memory (+ 2 bytes shared)
+//
+//Errors: none
+//Warnings: none

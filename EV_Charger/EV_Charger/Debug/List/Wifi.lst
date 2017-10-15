@@ -1,0 +1,1099 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:46
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\Wifi.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\Wifi.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Wifi.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\Wifi.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\Wifi.c
+      1          #include "wlan.h" 
+      2          #include "evnt_handler.h"    
+      3          #include "nvmem.h"
+      4          #include "socket.h"
+      5          #include "netapp.h"
+      6          #include "spi.h"
+      7          #include "spi_version.h"
+      8          #include "board.h"
+      9          #include "Wifi.h"
+     10          #include "application_version.h"
+     11          #include "host_driver_version.h"
+     12          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x106
+   \   unsigned short volatile SD24CCTL2
+   \                     SD24CCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x166
+   \   unsigned short volatile TACCTL2
+   \                     TACCTL2:
+   \   000000                DS8 2
+     13          #include "security.h"
+     14          #include "main.h"
+     15          
+     16          #define PALTFORM_VERSION                               (1)
+     17          
+     18          
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     19          volatile unsigned long ulSmartConfigFinished, ulCC3000Connected,ulCC3000DHCP, OkToDoShutDown, ulCC3000DHCP_configured;
+   \                     ulSmartConfigFinished:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000Connected:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000DHCP:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     OkToDoShutDown:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000DHCP_configured:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     20          volatile unsigned char ucStopSmartConfig;
+   \                     ucStopSmartConfig:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     21          volatile long ulSocket;
+   \                     ulSocket:
+   \   000000                DS8 4
+     22          
+     23          
+     24          // Simple Config Prefix
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+     25          const char aucCC3000_prefix[] = {'T', 'T', 'T'};
+   \                     aucCC3000_prefix:
+   \   000000   545454       DC8 84, 84, 84
+     26          //unsigned char printOnce = 1;
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+     27          const char digits[] = "0123456789";
+   \                     digits:
+   \   000000   303132333435 DC8 "0123456789"
+   \            3637383900  
+     28          
+     29          //static char *datos;
+     30           // The family is AF_INET
+     31          enum 
+     32          {
+     33              ARP_INIT = 1,
+     34              ARP_IN_PROGRESS = 2,
+     35              ARP_DONE
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     36          } ulArpStatus;
+   \                     ulArpStatus:
+   \   000000                DS8 1
+     37          
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     38          sockaddr tSocketAddr;
+   \                     tSocketAddr:
+   \   000000                DS8 16
+     39          
+     40          //******************************************************************************
+     41          
+     42          
+
+   \                                 In  segment DATA16_N, align 1, align-sorted
+     43          __no_init unsigned char pucCC3000_Rx_Buffer[CC3000_APP_BUFFER_SIZE + CC3000_RX_BUFFER_OVERHEAD_SIZE];
+   \                     pucCC3000_Rx_Buffer:
+   \   000000                DS8 22
+     44          
+     45          
+     46          
+     47          //! @brief  Convert integer to ASCII in decimal base
+
+   \                                 In  segment CODE, align 2
+     48          unsigned short itoa(char cNum, char *cString)
+   \                     itoa:
+     49          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+   \   000008   4B4C         MOV.B   R12, R11
+   \   00000A   084D         MOV.W   R13, R8
+     50              char* ptr;
+     51              char uTemp = cNum;
+   \   00000C   494C         MOV.B   R12, R9
+     52              unsigned short length;
+     53          
+     54              // Value 0 is a special case
+     55              if (cNum == 0)
+   \   00000E   4C93         CMP.B   #0x0, R12
+   \   000010   0520         JNE     ??itoa_2
+     56              {
+     57                  length = 1;
+     58                  *cString = '0';
+   \   000012   FD4030000000 MOV.B   #0x30, 0(R13)
+     59                  
+     60                  return length;
+   \   000018   1C43         MOV.W   #0x1, R12
+   \   00001A   163C         JMP     ??itoa_3
+     61              }
+     62          
+     63              // Find out the length of the number, in decimal base
+     64              length = 0;
+   \                     ??itoa_2:
+   \   00001C   0A43         MOV.W   #0x0, R10
+     65              while (uTemp > 0)
+     66              {
+     67                  uTemp /= 10;
+   \                     ??itoa_0:
+   \   00001E   B012....     CALL    #?Subroutine11
+   \                     ??CrossCallReturnLabel_21:
+   \   000022   494C         MOV.B   R12, R9
+     68                  length++;
+   \   000024   1A53         ADD.W   #0x1, R10
+     69              }
+   \   000026   4C93         CMP.B   #0x0, R12
+   \   000028   FA23         JNE     ??itoa_0
+     70          
+     71              // Do the actual formatting, right to left
+     72              uTemp = cNum;
+   \   00002A   494B         MOV.B   R11, R9
+     73              ptr = cString + length;
+   \   00002C   085A         ADD.W   R10, R8
+     74              while (uTemp > 0)
+     75              {
+     76                  --ptr;
+   \                     ??itoa_1:
+   \   00002E   3853         ADD.W   #0xffff, R8
+     77                  *ptr = digits[uTemp % 10];
+   \   000030   B012....     CALL    #?Subroutine11
+   \                     ??CrossCallReturnLabel_22:
+   \   000034   4E4E         MOV.B   R14, R14
+   \   000036   D84E....0000 MOV.B   digits(R14), 0(R8)
+     78                  uTemp /= 10;
+   \   00003C   B012....     CALL    #?Subroutine11
+     79              }
+   \                     ??CrossCallReturnLabel_23:
+   \   000040   494C         MOV.B   R12, R9
+   \   000042   4C93         CMP.B   #0x0, R12
+   \   000044   F423         JNE     ??itoa_1
+     80          
+     81              return length;
+   \   000046   0C4A         MOV.W   R10, R12
+   \                     ??itoa_3:
+   \   000048   3040....     BR      #?Epilogue4
+     82          }
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine11:
+   \   000000   4C49         MOV.B   R9, R12
+   \   000002   7E400A00     MOV.B   #0xa, R14
+   \   000006   3040....     BR      #?DivMod8u
+     83          
+     84          //! @brief  Convert nibble to hexdecimal from ASCII
+
+   \                                 In  segment CODE, align 2
+     85          unsigned char atoc(char data)
+   \                     atoc:
+     86          {
+     87              unsigned char ucRes;
+     88          
+     89              if ((data >= 0x30) && (data <= 0x39))
+   \   000000   4F4C         MOV.B   R12, R15
+   \   000002   7F50D000     ADD.B   #0xd0, R15
+   \   000006   7F900A00     CMP.B   #0xa, R15
+   \   00000A   022C         JC      ??atoc_0
+     90              {
+     91                  ucRes = data - 0x30;
+   \   00000C   4E4F         MOV.B   R15, R14
+   \   00000E   233C         JMP     ??atoc_1
+     92              }
+     93              else
+     94              {
+     95                  if (data == 'a')
+   \                     ??atoc_0:
+   \   000010   7C906100     CMP.B   #0x61, R12
+   \   000014   0320         JNE     ??atoc_2
+     96                  {
+     97                      ucRes = 0x0a;;
+   \   000016   7E400A00     MOV.B   #0xa, R14
+   \   00001A   1D3C         JMP     ??atoc_1
+     98                  }
+     99                  else if (data == 'b')
+   \                     ??atoc_2:
+   \   00001C   7C906200     CMP.B   #0x62, R12
+   \   000020   0320         JNE     ??atoc_3
+    100                  {
+    101                      ucRes = 0x0b;
+   \   000022   7E400B00     MOV.B   #0xb, R14
+   \   000026   173C         JMP     ??atoc_1
+    102                  }
+    103                  else if (data == 'c')
+   \                     ??atoc_3:
+   \   000028   7C906300     CMP.B   #0x63, R12
+   \   00002C   0320         JNE     ??atoc_4
+    104                  {
+    105                      ucRes = 0x0c;
+   \   00002E   7E400C00     MOV.B   #0xc, R14
+   \   000032   113C         JMP     ??atoc_1
+    106                  }
+    107                  else if (data == 'd')
+   \                     ??atoc_4:
+   \   000034   7C906400     CMP.B   #0x64, R12
+   \   000038   0320         JNE     ??atoc_5
+    108                  {
+    109                      ucRes = 0x0d;
+   \   00003A   7E400D00     MOV.B   #0xd, R14
+   \   00003E   0B3C         JMP     ??atoc_1
+    110                  }
+    111                  else if (data == 'e')
+   \                     ??atoc_5:
+   \   000040   7C906500     CMP.B   #0x65, R12
+   \   000044   0320         JNE     ??atoc_6
+    112                  {
+    113                      ucRes = 0x0e;
+   \   000046   7E400E00     MOV.B   #0xe, R14
+   \   00004A   053C         JMP     ??atoc_1
+    114                  }
+    115                  else if (data == 'f')
+   \                     ??atoc_6:
+   \   00004C   7C906600     CMP.B   #0x66, R12
+   \   000050   0220         JNE     ??atoc_1
+    116                  {
+    117                      ucRes = 0x0f;
+   \   000052   7E400F00     MOV.B   #0xf, R14
+    118                  }
+    119              }
+    120          
+    121              return ucRes;
+   \                     ??atoc_1:
+   \   000056   4C4E         MOV.B   R14, R12
+   \   000058   3041         RET
+    122          }
+    123          
+    124          //! @brief  Convert 2 nibbles in ASCII into a short number
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine1:
+   \   000000   3B41         POP.W   R11
+   \   000002   3A41         POP.W   R10
+   \   000004   3041         RET
+
+   \                                 In  segment CODE, align 2
+    125          unsigned short atoshort(char b1, char b2)
+   \                     atoshort:
+    126          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   4B4D         MOV.B   R13, R11
+    127              unsigned short usRes;
+    128          
+    129              usRes = (atoc(b1)) * 16 | atoc(b2);
+    130          
+    131              return usRes;
+   \   000006   B012....     CALL    #atoc
+   \   00000A   4A4C         MOV.B   R12, R10
+   \   00000C   4C4B         MOV.B   R11, R12
+   \   00000E   B012....     CALL    #atoc
+   \   000012   4F4C         MOV.B   R12, R15
+   \   000014   4C4A         MOV.B   R10, R12
+   \   000016   0C5C         RLA.W   R12
+   \   000018   0C5C         RLA.W   R12
+   \   00001A   0C5C         RLA.W   R12
+   \   00001C   0C5C         RLA.W   R12
+   \   00001E   0CDF         BIS.W   R15, R12
+   \   000020   ....         JMP     ?Subroutine1
+    132          }
+    133          
+    134          //! @brief  Convert 2 bytes in ASCII into one character
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    135          unsigned char ascii_to_char(char b1, char b2)
+   \                     ascii_to_char:
+    136          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   4A4D         MOV.B   R13, R10
+    137              unsigned char ucRes;
+    138          
+    139              ucRes = (atoc(b1)) << 4 | (atoc(b2));
+    140          
+    141              return ucRes;
+   \   000006   B012....     CALL    #atoc
+   \   00000A   4B4C         MOV.B   R12, R11
+   \   00000C   4C4A         MOV.B   R10, R12
+   \   00000E   B012....     CALL    #atoc
+   \   000012   4B5B         RLA.B   R11
+   \   000014   4B5B         RLA.B   R11
+   \   000016   4B5B         RLA.B   R11
+   \   000018   4B5B         RLA.B   R11
+   \   00001A   4CDB         BIS.B   R11, R12
+   \   00001C                REQUIRE ?Subroutine1
+   \   00001C                // Fall through to label ?Subroutine1
+    142          }
+    143          
+    144          //! @brief  The function returns a pointer to the driver patch: since there is  
+    145          //!         no patch (patches are taken from the EEPROM and not from the host
+    146          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   000000   8C430000     MOV.W   #0x0, 0(R12)
+   \   000004   8C430200     MOV.W   #0x0, 0x2(R12)
+   \   000008   0C43         MOV.W   #0x0, R12
+   \   00000A   3041         RET
+
+   \                                 In  segment CODE, align 2
+    147          char *sendDriverPatch(unsigned long *Length)
+   \                     sendDriverPatch:
+    148          {
+    149              *Length = 0;
+   \   000000   ....         JMP     ?Subroutine0
+    150              return NULL;
+    151          }
+    152          
+    153          //! @brief  The function returns a pointer to the bootloader patch: since there   
+    154          //!         is no patch (patches are taken from the EEPROM and not from the host
+    155          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    156          char *sendBootLoaderPatch(unsigned long *Length)
+   \                     sendBootLoaderPatch:
+    157          {
+    158              *Length = 0;
+   \   000000   ....         JMP     ?Subroutine0
+    159              return NULL;
+    160          }
+    161          
+    162          
+    163          //! @brief  The function returns a pointer to the driver patch: since there is  
+    164          //!         no patch (patches are taken from the EEPROM and not from the host
+    165          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    166          char *sendWLFWPatch(unsigned long *Length)
+   \                     sendWLFWPatch:
+    167          {
+    168              *Length = 0;
+   \   000000                REQUIRE ?Subroutine0
+   \   000000                // Fall through to label ?Subroutine0
+    169              return NULL;
+    170          }
+    171          
+    172          //! @brief  The function handles asynchronous events that come from CC3000  
+    173          //!         device and operates a LED1 to have an on-board indication
+    174          
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    175          void CC3000_UsynchCallback(long lEventType, char * data, unsigned char length)
+   \                     CC3000_UsynchCallback:
+    176          {
+    177              if (lEventType == HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE)
+   \   000000   3C908080     CMP.W   #0x8080, R12
+   \   000004   0920         JNE     ??CC3000_UsynchCallback_0
+   \   000006   0D93         CMP.W   #0x0, R13
+   \   000008   0720         JNE     ??CC3000_UsynchCallback_0
+    178              {
+    179                  ulSmartConfigFinished = 1;
+   \   00000A   9243....     MOV.W   #0x1, &ulSmartConfigFinished
+   \   00000E   8243....     MOV.W   #0x0, &ulSmartConfigFinished + 2
+    180                  ucStopSmartConfig     = 1;  
+   \   000012   D243....     MOV.B   #0x1, &ucStopSmartConfig
+   \   000016   3041         RET
+    181              }
+    182          
+    183              if (lEventType == HCI_EVNT_WLAN_UNSOL_CONNECT)
+   \                     ??CC3000_UsynchCallback_0:
+   \   000018   3C900180     CMP.W   #0x8001, R12
+   \   00001C   0720         JNE     ??CC3000_UsynchCallback_1
+   \   00001E   0D93         CMP.W   #0x0, R13
+   \   000020   0520         JNE     ??CC3000_UsynchCallback_1
+   \   000022   9243....     MOV.W   #0x1, &ulCC3000Connected
+   \   000026   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+   \   00002A   3041         RET
+    184              {
+    185                  ulCC3000Connected = 1;
+    186                
+    187                  // Turn on the LED7
+    188          
+    189              }
+    190          
+    191              if (lEventType == HCI_EVNT_WLAN_UNSOL_DISCONNECT)
+   \                     ??CC3000_UsynchCallback_1:
+   \   00002C   3C900280     CMP.W   #0x8002, R12
+   \   000030   0D20         JNE     ??CC3000_UsynchCallback_2
+   \   000032   0D93         CMP.W   #0x0, R13
+   \   000034   0B20         JNE     ??CC3000_UsynchCallback_2
+    192              {		
+    193                  ulCC3000Connected = 0;
+   \   000036   8243....     MOV.W   #0x0, &ulCC3000Connected
+   \   00003A   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+    194                  ulCC3000DHCP      = 0;
+   \   00003E   B012....     CALL    #?Subroutine8
+    195                  ulCC3000DHCP_configured = 0;
+   \                     ??CrossCallReturnLabel_16:
+   \   000042   8243....     MOV.W   #0x0, &ulCC3000DHCP_configured
+   \   000046   8243....     MOV.W   #0x0, &ulCC3000DHCP_configured + 2
+   \   00004A   3041         RET
+    196                  //printOnce = 1;
+    197                 
+    198                  // Turn off the LED7
+    199          
+    200                  
+    201                  // Turn off LED5
+    202                   
+    203              }
+    204          
+    205              if (lEventType == HCI_EVNT_WLAN_UNSOL_DHCP)
+   \                     ??CC3000_UsynchCallback_2:
+   \   00004C   3C901080     CMP.W   #0x8010, R12
+   \   000050   1E20         JNE     ??CC3000_UsynchCallback_3
+   \   000052   0D93         CMP.W   #0x0, R13
+   \   000054   1C20         JNE     ??CC3000_UsynchCallback_3
+    206              {
+    207                  // Notes: 
+    208                  // 1) IP config parameters are received swapped
+    209                  // 2) IP config parameters are valid only if status is OK, 
+    210                  // i.e. ulCC3000DHCP becomes 1
+    211          
+    212                  // Only if status is OK, the flag is set to 1 and the 
+    213                  // addresses are valid.
+    214                  if ( *(data + NETAPP_IPCONFIG_MAC_OFFSET) == 0)
+   \   000056   CE931400     CMP.B   #0x0, 0x14(R14)
+   \   00005A   0224         JEQ     ??CC3000_UsynchCallback_4
+   \   00005C   3040....     BR      #?Subroutine8
+    215                  {
+    216                      sprintf((char*)pucCC3000_Rx_Buffer,"IP:%d.%d.%d.%d\f\r", data[3],data[2], data[1], data[0]);
+   \                     ??CC3000_UsynchCallback_4:
+   \   000060   6F4E         MOV.B   @R14, R15
+   \   000062   0F12         PUSH.W  R15
+   \   000064   5F4E0100     MOV.B   0x1(R14), R15
+   \   000068   0F12         PUSH.W  R15
+   \   00006A   5F4E0200     MOV.B   0x2(R14), R15
+   \   00006E   0F12         PUSH.W  R15
+   \   000070   5F4E0300     MOV.B   0x3(R14), R15
+   \   000074   0F12         PUSH.W  R15
+   \   000076   3D40....     MOV.W   #`?<Constant "IP:%d.%d.%d.%d\\f\\r">`, R13
+   \   00007A   3C40....     MOV.W   #pucCC3000_Rx_Buffer, R12
+   \   00007E   B012....     CALL    #sprintf
+    217                      ulCC3000DHCP = 1;
+   \   000082   9243....     MOV.W   #0x1, &ulCC3000DHCP
+   \   000086   8243....     MOV.W   #0x0, &ulCC3000DHCP + 2
+   \   00008A   3152         ADD.W   #0x8, SP
+   \   00008C   3041         RET
+    218          
+    219                  }
+    220                  else
+    221                  {
+    222                      ulCC3000DHCP = 0;
+    223          
+    224                  }
+    225              }
+    226          
+    227              if (lEventType == HCI_EVENT_CC3000_CAN_SHUT_DOWN)
+   \                     ??CC3000_UsynchCallback_3:
+   \   00008E   3C909900     CMP.W   #0x99, R12
+   \   000092   0720         JNE     ??CC3000_UsynchCallback_5
+   \   000094   0D93         CMP.W   #0x0, R13
+   \   000096   0520         JNE     ??CC3000_UsynchCallback_5
+   \   000098   9243....     MOV.W   #0x1, &OkToDoShutDown
+   \   00009C   8243....     MOV.W   #0x0, &OkToDoShutDown + 2
+   \   0000A0   3041         RET
+    228              {
+    229                  OkToDoShutDown = 1;
+    230              }	
+    231              
+    232              
+    233              if (lEventType == HCI_EVNT_ASYNC_ARP_DONE)
+   \                     ??CC3000_UsynchCallback_5:
+   \   0000A2   3C900084     CMP.W   #0x8400, R12
+   \   0000A6   0620         JNE     ??CC3000_UsynchCallback_6
+   \   0000A8   0D93         CMP.W   #0x0, R13
+   \   0000AA   0420         JNE     ??CC3000_UsynchCallback_6
+   \   0000AC   F2400300.... MOV.B   #0x3, &ulArpStatus
+   \   0000B2   3041         RET
+    234              {
+    235                 ulArpStatus = ARP_DONE;
+    236              }
+    237          
+    238              if (lEventType == HCI_EVNT_ASYNC_ARP_WAITING)
+   \                     ??CC3000_UsynchCallback_6:
+   \   0000B4   3C900089     CMP.W   #0x8900, R12
+   \   0000B8   0420         JNE     ??CC3000_UsynchCallback_7
+   \   0000BA   0D93         CMP.W   #0x0, R13
+   \   0000BC   0220         JNE     ??CC3000_UsynchCallback_7
+    239              {
+    240                 ulArpStatus = ARP_IN_PROGRESS;
+   \   0000BE   E243....     MOV.B   #0x2, &ulArpStatus
+    241              }  
+    242          }
+   \                     ??CC3000_UsynchCallback_7:
+   \   0000C2   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine8:
+   \   000000   8243....     MOV.W   #0x0, &ulCC3000DHCP
+   \   000004   8243....     MOV.W   #0x0, &ulCC3000DHCP + 2
+   \   000008   3041         RET
+    243          
+    244          
+    245          //!  @brief  The function initializes a CC3000 device and triggers it to 
+    246          //!          start operation
+
+   \                                 In  segment CODE, align 2
+    247          int initDriver(void)
+   \                     initDriver:
+    248          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+   \   000008   31803200     SUB.W   #0x32, SP
+    249              ulCC3000DHCP = 0;
+   \   00000C   B012....     CALL    #?Subroutine8
+    250              ulCC3000Connected = 0;
+   \                     ??CrossCallReturnLabel_15:
+   \   000010   8243....     MOV.W   #0x0, &ulCC3000Connected
+   \   000014   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+    251              ulSocket = 0;
+   \   000018   8243....     MOV.W   #0x0, &ulSocket
+   \   00001C   8243....     MOV.W   #0x0, &ulSocket + 2
+    252              ulSmartConfigFinished=0;
+   \   000020   8243....     MOV.W   #0x0, &ulSmartConfigFinished
+   \   000024   8243....     MOV.W   #0x0, &ulSmartConfigFinished + 2
+    253              
+    254               
+    255              pio_init();
+   \   000028   B012....     CALL    #pio_init
+    256              __delay_cycles(120000);
+   \   00002C                ////////////// Start of 120000 cycles delay.
+   \   00002C   0343         NOP
+   \   00002E   3F403E9C     MOV.W   #0x9c3e, R15
+   \                     ??initDriver_6:
+   \   000032   3F53         ADD.W   #0xffff, R15
+   \   000034   FE2F         JC      ??initDriver_6
+   \   000036                ////////////// End of delay code.
+    257              
+    258              init_spi();
+   \   000036   B012....     CALL    #init_spi
+    259              
+    260          
+    261              // WLAN On API Implementation
+    262              wlan_init(CC3000_UsynchCallback, sendWLFWPatch, sendDriverPatch, sendBootLoaderPatch, ReadWlanInterruptPin, WlanInterruptEnable, WlanInterruptDisable, WriteWlanPin);
+   \   00003A   3012....     PUSH.W  #WriteWlanPin
+   \   00003E   3012....     PUSH.W  #WlanInterruptDisable
+   \   000042   3012....     PUSH.W  #WlanInterruptEnable
+   \   000046   3012....     PUSH.W  #ReadWlanInterruptPin
+   \   00004A   3F40....     MOV.W   #sendBootLoaderPatch, R15
+   \   00004E   3E40....     MOV.W   #sendDriverPatch, R14
+   \   000052   3D40....     MOV.W   #sendWLFWPatch, R13
+   \   000056   3C40....     MOV.W   #CC3000_UsynchCallback, R12
+   \   00005A   B012....     CALL    #wlan_init
+    263          
+    264          
+    265              // Trigger a WLAN device
+    266              wlan_start(0);
+   \   00005E   0C43         MOV.W   #0x0, R12
+   \   000060   B012....     CALL    #wlan_start
+    267          
+    268              // Mask out all non-required events from CC3000
+    269              wlan_set_event_mask(HCI_EVENT_MASK);
+   \   000064   3C404482     MOV.W   #0x8244, R12
+   \   000068   0D43         MOV.W   #0x0, R13
+   \   00006A   B012....     CALL    #wlan_set_event_mask
+    270               // Generate the event to CLI: send a version string
+    271              {
+    272                  char cc3000IP[50];
+    273                  char *ccPtr;
+    274                  unsigned short ccLen;
+    275                               
+    276                  ccPtr = &cc3000IP[0];
+    277                  ccLen = itoa(PALTFORM_VERSION, ccPtr);
+    278                  ccPtr += ccLen;
+   \   00006E   0A41         MOV.W   SP, R10
+   \   000070   3A52         ADD.W   #0x8, R10
+   \   000072   0D41         MOV.W   SP, R13
+   \   000074   3D52         ADD.W   #0x8, R13
+   \   000076   5C43         MOV.B   #0x1, R12
+   \   000078   B012....     CALL    #?Subroutine7
+    279                  *ccPtr++ = '.';
+    280                  ccLen = itoa(APPLICATION_VERSION, ccPtr);
+    281                  ccPtr += ccLen;
+   \                     ??CrossCallReturnLabel_13:
+   \   00007C   0D4A         MOV.W   R10, R13
+   \   00007E   7C400E00     MOV.B   #0xe, R12
+   \   000082   B012....     CALL    #?Subroutine7
+    282                  *ccPtr++ = '.';
+    283                  ccLen = itoa(SPI_VERSION_NUMBER, ccPtr);
+   \                     ??CrossCallReturnLabel_14:
+   \   000086   78400700     MOV.B   #0x7, R8
+   \   00008A   0943         MOV.W   #0x0, R9
+   \   00008C   7B400A00     MOV.B   #0xa, R11
+   \   000090   3152         ADD.W   #0x8, SP
+   \   000092   B012....     CALL    #?Subroutine10
+   \                     ??CrossCallReturnLabel_19:
+   \   000096   78400700     MOV.B   #0x7, R8
+   \   00009A   B012....     CALL    #?Subroutine9
+    284                  ccPtr += ccLen;
+    285                  *ccPtr++ = '.';
+   \                     ??CrossCallReturnLabel_17:
+   \   00009E   FA402E000000 MOV.B   #0x2e, 0(R10)
+   \   0000A4   1A53         ADD.W   #0x1, R10
+    286                  ccLen = itoa(DRIVER_VERSION_NUMBER, ccPtr);
+   \   0000A6   78401000     MOV.B   #0x10, R8
+   \   0000AA   0943         MOV.W   #0x0, R9
+   \   0000AC   B012....     CALL    #?Subroutine10
+   \                     ??CrossCallReturnLabel_20:
+   \   0000B0   78401000     MOV.B   #0x10, R8
+   \   0000B4   B012....     CALL    #?Subroutine9
+    287                  ccPtr += ccLen;
+    288                  *ccPtr++ = '\f';
+   \                     ??CrossCallReturnLabel_18:
+   \   0000B8   FA400C000000 MOV.B   #0xc, 0(R10)
+   \   0000BE   1A53         ADD.W   #0x1, R10
+    289                  *ccPtr++ = '\r';
+   \   0000C0   FA400D000000 MOV.B   #0xd, 0(R10)
+   \   0000C6   1A53         ADD.W   #0x1, R10
+    290                  *ccPtr++ = '\0';
+   \   0000C8   CA430000     MOV.B   #0x0, 0(R10)
+    291              }
+    292          
+    293              __delay_cycles(2000000); 
+   \   0000CC                ////////////// Start of 2000000 cycles delay.
+   \   0000CC   3F401EA1     MOV.W   #0xa11e, R15
+   \   0000D0   3B400700     MOV.W   #0x7, R11
+   \                     ??initDriver_7:
+   \   0000D4   3F53         ADD.W   #0xffff, R15
+   \   0000D6   3B63         ADDC.W  #0xffff, R11
+   \   0000D8   FD2F         JC      ??initDriver_7
+   \   0000DA                ////////////// End of delay code.
+    294          
+    295              ucStopSmartConfig   = 0;
+   \   0000DA   C243....     MOV.B   #0x0, &ucStopSmartConfig
+    296              
+    297              
+    298               
+    299              
+    300              return(0);
+   \   0000DE   0C43         MOV.W   #0x0, R12
+   \   0000E0   31503200     ADD.W   #0x32, SP
+   \   0000E4   3040....     BR      #?Epilogue4
+    301          }
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine7:
+   \   000000   B012....     CALL    #itoa
+   \   000004   0A5C         ADD.W   R12, R10
+   \   000006   FA402E000000 MOV.B   #0x2e, 0(R10)
+   \   00000C   1A53         ADD.W   #0x1, R10
+   \   00000E   3041         RET
+    302          
+    303          
+    304          
+    305          
+    306          
+    307          
+    308          //Close socket
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine5:
+   \   000000   1C42....     MOV.W   &ulSocket, R12
+   \   000004   1D42....     MOV.W   &ulSocket + 2, R13
+   \   000008   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    309          void closeSocket()
+   \                     closeSocket:
+    310          {
+    311              closesocket( ulSocket );       
+   \   000000   B012....     CALL    #?Subroutine5
+   \                     ??CrossCallReturnLabel_10:
+   \   000004                REQUIRE ?Subroutine13
+   \   000004                // Fall through to label ?Subroutine13
+    312              ulSocket = 0xFFFFFFFF;    
+    313          }
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine13:
+   \   000000   B012....     CALL    #closesocket
+   \   000004   B243....     MOV.W   #0xffff, &ulSocket
+   \   000008   B243....     MOV.W   #0xffff, &ulSocket + 2
+   \   00000C   3041         RET
+    314          
+    315          //Function send UDP message
+
+   \                                 In  segment CODE, align 2
+    316          void sendMessage(char *datos)
+   \                     sendMessage:
+    317          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0A4C         MOV.W   R12, R10
+    318           
+    319                  SD24CCTL2 &= ~SD24IE;
+   \   000004   B012....     CALL    #?Subroutine4
+    320                  TACCTL2&= ~CCIE;
+    321          
+    322                  ulArpStatus = ARP_INIT;
+   \                     ??CrossCallReturnLabel_6:
+   \   000008   D243....     MOV.B   #0x1, &ulArpStatus
+    323                  
+    324                  //Open UDP socket
+    325                  ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   00000C   0312         PUSH.W  #0x0
+   \   00000E   30121100     PUSH.W  #0x11
+   \   000012   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_11:
+   \   000016   B012....     CALL    #?Subroutine2
+    326                   // The family is AF_INET
+    327                  tSocketAddr.sa_family = AF_INET;  
+    328                  
+    329                  //PORT:4444
+    330                  tSocketAddr.sa_data[0] = 0x11;
+    331                  tSocketAddr.sa_data[1] = 0x5C; 
+    332           
+    333                  //IP:192.168.1.128
+    334                  tSocketAddr.sa_data[2] = 0xC0;
+    335                  tSocketAddr.sa_data[3] = 0xA8;
+    336                  tSocketAddr.sa_data[4] = 0x01;
+    337                  tSocketAddr.sa_data[5] = 0x80;
+    338                  //unsigned long longitud=strlen(datos);  
+    339                  
+    340                  sendto(ulSocket, datos, 8, 0, &tSocketAddr, sizeof(sockaddr));                
+   \                     ??CrossCallReturnLabel_1:
+   \   00001A   0312         PUSH.W  #0x0
+   \   00001C   30121000     PUSH.W  #0x10
+   \   000020   0312         PUSH.W  #0x0
+   \   000022   0312         PUSH.W  #0x0
+   \   000024   0312         PUSH.W  #0x0
+   \   000026   30120800     PUSH.W  #0x8
+   \   00002A   3F40....     MOV.W   #tSocketAddr, R15
+   \   00002E   0E4A         MOV.W   R10, R14
+   \   000030   B012....     CALL    #?Subroutine5
+   \                     ??CrossCallReturnLabel_9:
+   \   000034   B012....     CALL    #sendto
+    341                 
+    342                  
+    343                 /* if(firstSend == 1)
+    344                  {   
+    345                      while(ulArpStatus == ARP_INIT || ulArpStatus == ARP_IN_PROGRESS); 
+    346                      
+    347                     firstSend = 0;
+    348                 }
+    349                 */         
+    350                 __delay_cycles(2000); 
+   \   000038                ////////////// Start of 2000 cycles delay.
+   \   000038   3F409902     MOV.W   #0x299, R15
+   \                     ??sendMessage_0:
+   \   00003C   3F53         ADD.W   #0xffff, R15
+   \   00003E   FE2F         JC      ??sendMessage_0
+   \   000040                ////////////// End of delay code.
+    351                 
+    352                  closeSocket();
+   \   000040   B012....     CALL    #?Subroutine3
+    353                  SD24CCTL2 |= SD24IE;
+    354                  TACCTL2|= CCIE;
+    355          
+    356                     
+    357          }
+   \                     ??CrossCallReturnLabel_3:
+   \   000044   31501000     ADD.W   #0x10, SP
+   \   000048   3A41         POP.W   R10
+   \   00004A   3041         RET
+   \   00004C                REQUIRE SD24CCTL2
+   \   00004C                REQUIRE TACCTL2
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine6:
+   \   000000   2E43         MOV.W   #0x2, R14
+   \   000002   0F43         MOV.W   #0x0, R15
+   \   000004   2C43         MOV.W   #0x2, R12
+   \   000006   0D43         MOV.W   #0x0, R13
+   \   000008   3040....     BR      #socket
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine4:
+   \   000000   B2C20601     BIC.W   #0x8, &0x106
+   \   000004   B2C010006601 BIC.W   #0x10, &0x166
+   \   00000A   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine3:
+   \   000000   1C42....     MOV.W   &ulSocket, R12
+   \   000004   1D42....     MOV.W   &ulSocket + 2, R13
+   \   000008   B012....     CALL    #?Subroutine13
+   \                     ??CrossCallReturnLabel_27:
+   \   00000C   B2D20601     BIS.W   #0x8, &0x106
+   \   000010   B2D010006601 BIS.W   #0x10, &0x166
+   \   000016   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine2:
+   \   000000   824C....     MOV.W   R12, &ulSocket
+   \   000004   824D....     MOV.W   R13, &ulSocket + 2
+   \   000008   A243....     MOV.W   #0x2, &tSocketAddr
+   \   00000C   F2401100.... MOV.B   #0x11, &tSocketAddr + 2
+   \   000012   F2405C00.... MOV.B   #0x5c, &tSocketAddr + 3
+   \   000018   F240C000.... MOV.B   #0xc0, &tSocketAddr + 4
+   \   00001E   F240A800.... MOV.B   #0xa8, &tSocketAddr + 5
+   \   000024   D243....     MOV.B   #0x1, &tSocketAddr + 6
+   \   000028   F2408000.... MOV.B   #0x80, &tSocketAddr + 7
+   \   00002E   3041         RET
+    358          
+    359          
+    360          
+    361          
+    362          //Function receive UDP message
+
+   \                                 In  segment CODE, align 2
+    363          void receiveMessage()
+   \                     receiveMessage:
+    364          {
+   \   000000   2182         SUB.W   #0x4, SP
+    365                  SD24CCTL2 &= ~SD24IE;
+   \   000002   B012....     CALL    #?Subroutine4
+    366                  TACCTL2&= ~CCIE;
+    367                 // sockaddr tSocketAddr;
+    368                  socklen_t tRxPacketLength;  
+    369                  //Open UDP socket
+    370              
+    371                  ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \                     ??CrossCallReturnLabel_4:
+   \   000006   0312         PUSH.W  #0x0
+   \   000008   30121100     PUSH.W  #0x11
+   \   00000C   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_12:
+   \   000010   B012....     CALL    #?Subroutine2
+    372                     
+    373                  // The family is AF_INET
+    374                  tSocketAddr.sa_family = AF_INET;  
+    375                  
+    376                  //PORT:4444
+    377                  tSocketAddr.sa_data[0] = 0x11;
+    378                  tSocketAddr.sa_data[1] = 0x5C; 
+    379           
+    380                  //IP:192.168.1.128
+    381                  tSocketAddr.sa_data[2] = 0xC0;
+    382                  tSocketAddr.sa_data[3] = 0xA8;
+    383                  tSocketAddr.sa_data[4] = 0x01;
+    384                  tSocketAddr.sa_data[5] = 0x80;
+    385                   
+    386                  //Fill data in tSocketAddr with "0"
+    387                  memset (&tSocketAddr.sa_data[2], 0, 4);  
+   \                     ??CrossCallReturnLabel_0:
+   \   000014   2E42         MOV.W   #0x4, R14
+   \   000016   0D43         MOV.W   #0x0, R13
+   \   000018   3C40....     MOV.W   #tSocketAddr + 4, R12
+   \   00001C   B012....     CALL    #memset
+    388                  //Associate socket ato a port and ip address
+    389                  bind(ulSocket, &tSocketAddr, sizeof(sockaddr));   
+   \   000020   0312         PUSH.W  #0x0
+   \   000022   30121000     PUSH.W  #0x10
+   \   000026   3E40....     MOV.W   #tSocketAddr, R14
+   \   00002A   B012....     CALL    #?Subroutine5
+   \                     ??CrossCallReturnLabel_7:
+   \   00002E   B012....     CALL    #bind
+    390                  SD24CCTL2 |= SD24IE;
+   \   000032   B2D20601     BIS.W   #0x8, &0x106
+    391                  TACCTL2|= CCIE;
+   \   000036   B2D010006601 BIS.W   #0x10, &0x166
+    392                  recvfrom(ulSocket, pucCC3000_Rx_Buffer, CC3000_APP_BUFFER_SIZE, 0, &tSocketAddr, &tRxPacketLength); 
+   \   00003C   0F41         MOV.W   SP, R15
+   \   00003E   3F52         ADD.W   #0x8, R15
+   \   000040   0F12         PUSH.W  R15
+   \   000042   0312         PUSH.W  #0x0
+   \   000044   0312         PUSH.W  #0x0
+   \   000046   0312         PUSH.W  #0x0
+   \   000048   2312         PUSH.W  #0x2
+   \   00004A   3F40....     MOV.W   #tSocketAddr, R15
+   \   00004E   3E40....     MOV.W   #pucCC3000_Rx_Buffer, R14
+   \   000052   B012....     CALL    #?Subroutine5
+   \                     ??CrossCallReturnLabel_8:
+   \   000056   B012....     CALL    #recvfrom
+    393                  SD24CCTL2 &= ~SD24IE;
+   \   00005A   B012....     CALL    #?Subroutine4
+    394                  TACCTL2&= ~CCIE;
+    395                  closeSocket();
+   \                     ??CrossCallReturnLabel_5:
+   \   00005E   B012....     CALL    #?Subroutine3
+    396                  SD24CCTL2 |= SD24IE;
+    397                  TACCTL2|= CCIE;
+    398                
+    399          }
+   \                     ??CrossCallReturnLabel_2:
+   \   000062   31501600     ADD.W   #0x16, SP
+   \   000066   3041         RET
+   \   000068                REQUIRE SD24CCTL2
+   \   000068                REQUIRE TACCTL2
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine10:
+   \   000000   B012....     CALL    #?Subroutine12
+   \                     ??CrossCallReturnLabel_26:
+   \   000004   484C         MOV.B   R12, R8
+   \   000006   1953         ADD.W   #0x1, R9
+   \   000008   4C93         CMP.B   #0x0, R12
+   \   00000A   FA23         JNE     ?Subroutine10
+   \   00000C   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine9:
+   \   000000   0A59         ADD.W   R9, R10
+   \   000002   094A         MOV.W   R10, R9
+   \                     ??initDriver_1:
+   \   000004   3953         ADD.W   #0xffff, R9
+   \   000006   B012....     CALL    #?Subroutine12
+   \                     ??CrossCallReturnLabel_24:
+   \   00000A   4E4E         MOV.B   R14, R14
+   \   00000C   D94E....0000 MOV.B   digits(R14), 0(R9)
+   \   000012   B012....     CALL    #?Subroutine12
+   \                     ??CrossCallReturnLabel_25:
+   \   000016   484C         MOV.B   R12, R8
+   \   000018   4C93         CMP.B   #0x0, R12
+   \   00001A   F423         JNE     ??initDriver_1
+   \   00001C   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine12:
+   \   000000   4C48         MOV.B   R8, R12
+   \   000002   4E4B         MOV.B   R11, R14
+   \   000004   3040....     BR      #?DivMod8u
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "IP:%d.%d.%d.%d\\f\\r">`:
+   \   000000   49503A25642E DC8 "IP:%d.%d.%d.%d\014\015"
+   \            25642E25642E
+   \            25640C0D00  
+    400          
+    401          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+     10   CC3000_UsynchCallback
+       10   -> sprintf
+      6   ascii_to_char
+        6   -> atoc
+      2   atoc
+      6   atoshort
+        6   -> atoc
+      2   closeSocket
+        2   -> closesocket
+     68   initDriver
+       60   -> init_spi
+       68   -> itoa
+       60   -> pio_init
+       68   -> wlan_init
+       68   -> wlan_set_event_mask
+       68   -> wlan_start
+     10   itoa
+     24   receiveMessage
+       14   -> bind
+       24   -> closesocket
+       10   -> memset
+       24   -> recvfrom
+       10   -> socket
+      2   sendBootLoaderPatch
+      2   sendDriverPatch
+     20   sendMessage
+       20   -> closesocket
+       20   -> sendto
+        8   -> socket
+      2   sendWLFWPatch
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      17  ?<Constant "IP:%d.%d.%d.%d\f\r">
+      12  ?Subroutine0
+       6  ?Subroutine1
+      14  ?Subroutine10
+      10  ?Subroutine11
+       8  ?Subroutine12
+      14  ?Subroutine13
+      48  ?Subroutine2
+      24  ?Subroutine3
+      12  ?Subroutine4
+      10  ?Subroutine5
+      12  ?Subroutine6
+      16  ?Subroutine7
+      10  ?Subroutine8
+      30  ?Subroutine9
+     196  CC3000_UsynchCallback
+       4  OkToDoShutDown
+       2  SD24CCTL2
+       2  TACCTL2
+      28  ascii_to_char
+      90  atoc
+      34  atoshort
+       3  aucCC3000_prefix
+       4  closeSocket
+      11  digits
+     232  initDriver
+      76  itoa
+      22  pucCC3000_Rx_Buffer
+     104  receiveMessage
+       2  sendBootLoaderPatch
+       2  sendDriverPatch
+      76  sendMessage
+       0  sendWLFWPatch
+      16  tSocketAddr
+       1  ucStopSmartConfig
+       1  ulArpStatus
+       4  ulCC3000Connected
+       4  ulCC3000DHCP
+       4  ulCC3000DHCP_configured
+       4  ulSmartConfigFinished
+       4  ulSocket
+
+ 
+ 1 070 bytes in segment CODE
+     4 bytes in segment DATA16_AN
+    31 bytes in segment DATA16_C
+    22 bytes in segment DATA16_N
+    42 bytes in segment DATA16_Z
+ 
+ 1 070 bytes of CODE  memory
+    31 bytes of CONST memory
+    64 bytes of DATA  memory (+ 4 bytes shared)
+
+Errors: none
+Warnings: none

@@ -1,0 +1,492 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:43
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\FlashMemory.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\FlashMemory.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\FlashMemory.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME FlashMemory
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?Epilogue4
+        EXTERN ?Epilogue3
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBWEAK FCTL1
+        PUBWEAK FCTL2
+        PUBWEAK FCTL3
+        PUBWEAK TACCR1
+        PUBLIC read_Identifier
+        PUBLIC read_Registers
+        PUBLIC set_Registers
+
+        EXTERN Charger_State
+        EXTERN powerSummation
+
+// Z:\EV_Charger\Source\EV_Charger\FlashMemory.c
+//    1 #include "Wifi.h" 
+//    2 #include "Wattmeter.h" 
+//    3 #include <msp430.h>
+
+        ASEGN DATA16_AN:DATA:NOROOT,0128H
+// unsigned short volatile FCTL1
+FCTL1:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,012aH
+// unsigned short volatile FCTL2
+FCTL2:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,012cH
+// unsigned short volatile FCTL3
+FCTL3:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,0174H
+// unsigned short volatile TACCR1
+TACCR1:
+        DS8 2
+//    4 #include "board.h"
+//    5 #include "Analog_sampling.h"
+//    6 #include "ControlPilot.h"
+//    7 #include "Charger_States.h"
+//    8 #include "Listener.h"
+//    9 #include "SmartConfig.h"
+//   10 #include "Wattmeter.h"
+//   11 #include "Wifi.h"
+//   12 #include "FlashMemory.h"
+//   13 #include "nvmem.h"
+//   14 #include "Main.h"
+//   15 #include <msp430.h>
+//   16 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   17 void set_Registers(char Identity)
+set_Registers:
+//   18 {
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        MOV.B   R12, R10
+//   19   char  *Flash_ptr;
+//   20    __bic_SR_register(GIE); 
+        BIC.W   #0x8, SR
+//   21         
+//   22     //Borrar bloque
+//   23     FCTL2 = FWKEY + FSSEL_3 + FN4+FN2;           // SMCLK/20 for Flash Timing Generator
+        MOV.W   #0xa5d4, &0x12a
+//   24     Flash_ptr=(char  *) Direccion_state;
+//   25     FCTL1 = FWKEY + ERASE;                  // Set Erase bit
+        MOV.W   #0xa502, &0x128
+//   26     FCTL3 = FWKEY;                          // Clear Lock bit
+        MOV.W   #0xa500, &0x12c
+//   27     *Flash_ptr = 0;                         // Dummy write to erase Flash segment
+        MOV.B   #0x0, &0xc000
+//   28     while((FCTL3 & BUSY));   
+??set_Registers_0:
+        BIT.W   #0x1, &0x12c
+        JC      ??set_Registers_0
+//   29   
+//   30   //Save state
+//   31   Flash_ptr=(char  *) Direccion_state;
+//   32   FCTL1 = FWKEY + WRT;
+        MOV.W   #0xa540, R11
+        MOV.W   R11, &0x128
+//   33   *Flash_ptr =Charger_State;
+        MOV.B   &Charger_State, &0xc000
+        CALL    #?Subroutine3
+//   34   while((FCTL3 & BUSY));
+//   35   
+//   36   //Save Duty
+//   37   Flash_ptr=(char  *) Direccion_duty;
+//   38   FCTL1 = FWKEY + WRT;
+//   39   *Flash_ptr =(TA0CCR1)&(0xFF); ;
+??CrossCallReturnLabel_6:
+        MOV.B   R14, &0xc001
+        CALL    #?Subroutine3
+//   40   while((FCTL3 & BUSY));
+//   41   
+//   42   Flash_ptr ++;
+//   43   FCTL1 = FWKEY + WRT;
+//   44   *Flash_ptr =(TA0CCR1>>8)&(0xFF);
+??CrossCallReturnLabel_7:
+        SWPB    R14
+        MOV.B   R14, &0xc002
+        CALL    #?Subroutine4
+//   45   while((FCTL3 & BUSY));  
+//   46   
+//   47   //Save EnergyConsumption
+//   48   Flash_ptr=(char  *) Direccion_EnergyConsmpt;
+//   49   FCTL1 = FWKEY + WRT;
+//   50   *Flash_ptr =(powerSummation)&(0xFF);
+??CrossCallReturnLabel_8:
+        MOV.W   #powerSummation, R8
+        MOV.B   @R8, &0xc003
+        CALL    #?Subroutine4
+//   51   while((FCTL3 & BUSY));
+//   52   
+//   53   Flash_ptr ++;
+//   54   FCTL1 = FWKEY + WRT;
+//   55   *Flash_ptr =(powerSummation>>8)&(0xFF);
+??CrossCallReturnLabel_9:
+        MOV.B   0x1(R8), &0xc004
+        CALL    #?Subroutine4
+//   56   while((FCTL3 & BUSY));  
+//   57   
+//   58    Flash_ptr ++;
+//   59   FCTL1 = FWKEY + WRT;
+//   60   *Flash_ptr =(powerSummation>>16)&(0xFF);
+??CrossCallReturnLabel_10:
+        MOV.B   0x2(R8), R14
+        MOV.B   R14, &0xc005
+        CALL    #?Subroutine4
+//   61   while((FCTL3 & BUSY)); 
+//   62   
+//   63    Flash_ptr ++;
+//   64   FCTL1 = FWKEY + WRT;
+//   65   *Flash_ptr =(powerSummation>>24)&(0xFF);
+??CrossCallReturnLabel_11:
+        MOV.W   0x2(R8), R14
+        SWPB    R14
+        MOV.B   R14, &0xc006
+        CALL    #?Subroutine4
+//   66   while((FCTL3 & BUSY)); 
+//   67   
+//   68    Flash_ptr ++;
+//   69   FCTL1 = FWKEY + WRT;
+//   70   *Flash_ptr =(powerSummation>>32)&(0xFF);
+??CrossCallReturnLabel_12:
+        MOV.B   0x4(R8), R14
+        MOV.B   R14, &0xc007
+        CALL    #?Subroutine4
+//   71   while((FCTL3 & BUSY)); 
+//   72   
+//   73    Flash_ptr ++;
+//   74   FCTL1 = FWKEY + WRT;
+//   75   *Flash_ptr =(powerSummation>>40)&(0xFF);
+??CrossCallReturnLabel_13:
+        MOV.W   R8, R15
+        MOV.W   @R15+, R12
+        MOV.W   @R15+, R13
+        MOV.W   @R15+, R12
+        MOV.W   @R15+, R15
+        SWPB    R15
+        SWPB    R12
+        XOR.B   R15, R12
+        XOR.B   R15, R12
+        MOV.B   R12, &0xc008
+        CALL    #?Subroutine4
+//   76   while((FCTL3 & BUSY)); 
+//   77   
+//   78    Flash_ptr ++;
+//   79   FCTL1 = FWKEY + WRT;
+//   80   *Flash_ptr =(powerSummation>>48)&(0xFF);
+??CrossCallReturnLabel_14:
+        MOV.B   0x6(R8), R14
+        MOV.B   R14, &0xc009
+        CALL    #?Subroutine4
+//   81   while((FCTL3 & BUSY)); 
+//   82   
+//   83    Flash_ptr ++;
+//   84   FCTL1 = FWKEY + WRT;
+//   85   *Flash_ptr =(powerSummation>>56)&(0xFF);
+??CrossCallReturnLabel_15:
+        MOV.W   @R8+, R12
+        MOV.W   @R8+, R13
+        MOV.W   @R8+, R14
+        MOV.W   @R8+, R15
+        SWPB    R15
+        MOV.B   R15, &0xc00a
+        CALL    #?Subroutine4
+//   86   while((FCTL3 & BUSY)); 
+//   87   
+//   88   //Save Identity
+//   89   Flash_ptr=(char  *) Direccion_Identifier;
+//   90   FCTL1 = FWKEY + WRT;
+//   91   *Flash_ptr =Identity;
+??CrossCallReturnLabel_16:
+        MOV.B   R10, &0xc00b
+//   92   while((FCTL3 & BUSY));
+??set_Registers_12:
+        BIT.W   #0x1, &0x12c
+        JC      ??set_Registers_12
+//   93   
+//   94   
+//   95     
+//   96   FCTL3 = FWKEY + LOCK;                     // Reset LOCK bit
+        MOV.W   #0xa510, &0x12c
+//   97 
+//   98   
+//   99  
+//  100 }
+        BR      #?Epilogue3
+        REQUIRE FCTL2
+        REQUIRE FCTL1
+        REQUIRE FCTL3
+        REQUIRE TACCR1
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine4:
+        BIT.W   #0x1, &0x12c
+        JC      ?Subroutine4
+        MOV.W   R11, &0x128
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine3:
+        BIT.W   #0x1, &0x12c
+        JC      ?Subroutine3
+        MOV.W   R11, &0x128
+        MOV.W   &0x174, R14
+        RET
+//  101 
+//  102 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  103 void read_Registers()
+read_Registers:
+//  104 {
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        PUSH.W  R9
+//  105   char  *Flash_ptr;
+//  106   
+//  107      
+//  108   __bic_SR_register(GIE); 
+        BIC.W   #0x8, SR
+//  109   Flash_ptr=(char  *) (Direccion_state); 
+//  110   Charger_State=(*Flash_ptr);
+        MOV.B   &0xc000, R14
+        MOV.B   R14, &Charger_State
+//  111   
+//  112   //First time
+//  113   if (Charger_State==0xFF)
+        CMP.B   #0xff, R14
+        JNE     ??read_Registers_0
+//  114   {
+//  115      Charger_State=0;
+        MOV.B   #0x0, &Charger_State
+//  116      powerSummation=0;
+        MOV.W   #0x0, &powerSummation
+        CALL    #?Subroutine1
+//  117      TA0CCR1=8000;
+??CrossCallReturnLabel_4:
+        MOV.W   #0x1f40, &0x174
+//  118      set_Registers(255);
+        MOV.B   #0xff, R12
+        CALL    #set_Registers
+//  119      return;
+        JMP     ??read_Registers_1
+//  120   }
+//  121 
+//  122   Flash_ptr=(char  *) (Direccion_duty); 
+//  123   TA0CCR1=(*Flash_ptr);
+??read_Registers_0:
+        MOV.B   &0xc001, R15
+        MOV.W   R15, &0x174
+//  124   Flash_ptr ++;
+//  125   TA0CCR1=TA0CCR1+((*Flash_ptr)<<8);
+        MOV.B   &0xc002, R15
+        SWPB    R15
+        ADD.W   R15, &0x174
+//  126   
+//  127   Flash_ptr=(char  *) (Direccion_EnergyConsmpt+7); 
+//  128   powerSummation=(*Flash_ptr);
+        MOV.B   &0xc00a, R8
+        MOV.W   R8, &powerSummation
+        CALL    #?Subroutine1
+??CrossCallReturnLabel_5:
+        MOV.B   R8, R9
+        XOR.W   R8, R9
+        SWPB    R8
+        MOV.B   &0xc009, R12
+        ADD.W   R12, R8
+        ADDC.W  #0x0, R9
+        MOV.W   R8, &powerSummation
+        MOV.W   R9, &powerSummation + 2
+        MOV.W   #0x0, &powerSummation + 4
+        MOV.W   #0x0, &powerSummation + 6
+//  129   Flash_ptr --;
+//  130   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+//  131   Flash_ptr --;
+//  132   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+        MOV.B   R9, R10
+        XOR.W   R9, R10
+        CALL    #??Subroutine7_0
+??CrossCallReturnLabel_20:
+        MOV.B   &0xc008, R12
+        ADD.W   R12, R8
+        ADDC.W  #0x0, R9
+        ADDC.W  #0x0, R10
+        CALL    #?Subroutine6
+??CrossCallReturnLabel_17:
+        MOV.W   #0x0, &powerSummation + 6
+//  133   Flash_ptr --;
+//  134   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+        MOV.B   R10, R11
+        XOR.W   R10, R11
+        CALL    #?Subroutine5
+??CrossCallReturnLabel_21:
+        MOV.B   &0xc007, R12
+        CALL    #?Subroutine0
+//  135   Flash_ptr --;
+//  136   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+??CrossCallReturnLabel_3:
+        MOV.B   &0xc006, R12
+        CALL    #?Subroutine0
+//  137   Flash_ptr --;
+//  138   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+??CrossCallReturnLabel_2:
+        MOV.B   &0xc005, R12
+        CALL    #?Subroutine0
+//  139   Flash_ptr --;
+//  140   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+??CrossCallReturnLabel_1:
+        MOV.B   &0xc004, R12
+        CALL    #?Subroutine0
+//  141   Flash_ptr --;
+//  142   powerSummation=(powerSummation<<8)+(*Flash_ptr);
+??CrossCallReturnLabel_0:
+        MOV.B   &0xc003, R12
+        ADD.W   R12, R8
+        ADDC.W  #0x0, R9
+        ADDC.W  #0x0, R10
+        ADDC.W  #0x0, R11
+        CALL    #?Subroutine6
+??CrossCallReturnLabel_18:
+        MOV.W   R11, &powerSummation + 6
+//  143   
+//  144   __bis_SR_register(GIE);
+        BIS.W   #0x8, SR
+//  145   
+//  146   
+//  147   
+//  148  }
+??read_Registers_1:
+        BR      #?Epilogue4
+        REQUIRE TACCR1
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine6:
+        MOV.W   R8, &powerSummation
+        MOV.W   R9, &powerSummation + 2
+        MOV.W   R10, &powerSummation + 4
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine1:
+        MOV.W   #0x0, &powerSummation + 2
+        MOV.W   #0x0, &powerSummation + 4
+        MOV.W   #0x0, &powerSummation + 6
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine0:
+        ADD.W   R12, R8
+        ADDC.W  #0x0, R9
+        ADDC.W  #0x0, R10
+        ADDC.W  #0x0, R11
+        CALL    #?Subroutine6
+??CrossCallReturnLabel_19:
+        MOV.W   R11, &powerSummation + 6
+        XOR.B   R10, R11
+        XOR.W   R10, R11
+        SWPB    R11
+        REQUIRE ?Subroutine5
+        // Fall through to label ?Subroutine5
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine5:
+        XOR.B   R9, R10
+        XOR.W   R9, R10
+        SWPB    R10
+        REQUIRE ??Subroutine7_0
+        // Fall through to label ??Subroutine7_0
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+??Subroutine7_0:
+        XOR.B   R8, R9
+        XOR.W   R8, R9
+        SWPB    R9
+        AND.B   #0xff, R8
+        SWPB    R8
+        RET
+//  149 
+//  150 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  151 char read_Identifier()
+read_Identifier:
+//  152 {
+//  153   char  *Flash_ptr;
+//  154   char Identity;
+//  155   __bic_SR_register(GIE);   
+        BIC.W   #0x8, SR
+//  156   
+//  157   Flash_ptr=(char  *) (Direccion_Identifier); 
+//  158   Identity=(*Flash_ptr);
+        MOV.B   &0xc00b, R12
+//  159   
+//  160   __bis_SR_register(GIE);
+        BIS.W   #0x8, SR
+//  161   
+//  162   
+//  163   return(Identity);
+        RET
+//  164 }
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+//  165 
+//  166 
+//  167 
+//  168 
+//  169 
+// 
+// 516 bytes in segment CODE
+//   8 bytes in segment DATA16_AN
+// 
+// 516 bytes of CODE memory
+//   0 bytes of DATA memory (+ 8 bytes shared)
+//
+//Errors: none
+//Warnings: none

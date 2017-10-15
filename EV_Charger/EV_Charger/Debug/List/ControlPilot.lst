@@ -1,0 +1,305 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:42
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\ControlPilot.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\ControlPilot.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\ControlPilot.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\ControlPilot.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\ControlPilot.c
+      1          #include "Charger_Station.h"
+      2          #include "Analog_sampling.h"
+      3          #include "Main.h"
+      4          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x21
+   \   unsigned char volatile P1OUT
+   \                     P1OUT:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_AN, at 0x26
+   \   unsigned char volatile P1SEL
+   \                     P1SEL:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_AN, at 0x164
+   \   unsigned short volatile TACCTL1
+   \                     TACCTL1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+      5          
+      6          
+      7          
+
+   \                                 In  segment CODE, align 2
+      8          void CheckPilot( unsigned short Pilot_H)
+   \                     CheckPilot:
+      9          {    
+     10            
+     11              
+     12            //Verify Pilot_H
+     13              if((Pilot_H<26042)&(Pilot_H>22035))   //11V<Pilot_H<13V
+   \   000000   3F40A60F     MOV.W   #0xfa6, R15
+   \   000004   0E4C         MOV.W   R12, R14
+   \   000006   3E50ECA9     ADD.W   #0xa9ec, R14
+   \   00000A   0E9F         CMP.W   R15, R14
+   \   00000C   0B2C         JC      ??CheckPilot_13
+     14              {
+     15                if(Pilot_State=='A')
+   \   00000E   1F42....     MOV.W   &Pilot_Num, R15
+   \   000012   F2904100.... CMP.B   #0x41, &Pilot_State
+   \   000018   B012....     CALL    #?Subroutine0
+     16                {
+     17                  if(Pilot_Num<20000)
+     18                    Pilot_Num ++;
+     19                }
+     20                else
+     21                  Pilot_Num=0;
+     22                
+     23                Pilot_State='A';
+   \                     ??CrossCallReturnLabel_0:
+   \   00001C   F2404100.... MOV.B   #0x41, &Pilot_State
+     24                return;
+   \   000022   3041         RET
+     25              }
+     26              
+     27              if((Pilot_H<20032)&(Pilot_H>16025))   //10V<Pilot_H<8V
+   \                     ??CheckPilot_13:
+   \   000024   0E4C         MOV.W   R12, R14
+   \   000026   3E5066C1     ADD.W   #0xc166, R14
+   \   00002A   0E9F         CMP.W   R15, R14
+   \   00002C   0B2C         JC      ??CheckPilot_14
+     28              {
+     29                if(Pilot_State=='B')
+   \   00002E   1F42....     MOV.W   &Pilot_Num, R15
+   \   000032   F2904200.... CMP.B   #0x42, &Pilot_State
+   \   000038   B012....     CALL    #?Subroutine0
+     30                {
+     31                  if(Pilot_Num<20000)
+     32                    Pilot_Num ++;
+     33                }
+     34                else
+     35                  Pilot_Num=0;
+     36                
+     37                Pilot_State='B';
+   \                     ??CrossCallReturnLabel_1:
+   \   00003C   F2404200.... MOV.B   #0x42, &Pilot_State
+     38                return;
+   \   000042   3041         RET
+     39              }
+     40              
+     41              if((Pilot_H<14022)&(Pilot_H>10016))   //6V<Pilot_H<7V
+   \                     ??CheckPilot_14:
+   \   000044   0E4C         MOV.W   R12, R14
+   \   000046   3E50DFD8     ADD.W   #0xd8df, R14
+   \   00004A   3E90A50F     CMP.W   #0xfa5, R14
+   \   00004E   0B2C         JC      ??CheckPilot_15
+     42              {
+     43                if(Pilot_State=='C')
+   \   000050   1F42....     MOV.W   &Pilot_Num, R15
+   \   000054   F2904300.... CMP.B   #0x43, &Pilot_State
+   \   00005A   B012....     CALL    #?Subroutine0
+     44                {
+     45                  if(Pilot_Num<20000)
+     46                    Pilot_Num ++;
+     47                }
+     48                else
+     49                  Pilot_Num=0;
+     50                
+     51                Pilot_State='C';
+   \                     ??CrossCallReturnLabel_2:
+   \   00005E   F2404300.... MOV.B   #0x43, &Pilot_State
+     52                return;
+   \   000064   3041         RET
+     53              }
+     54              
+     55              if((Pilot_H<8013)&(Pilot_H>4006))   //2V<Pilot_H<4V
+   \                     ??CheckPilot_15:
+   \   000066   0E4C         MOV.W   R12, R14
+   \   000068   3E5059F0     ADD.W   #0xf059, R14
+   \   00006C   0E9F         CMP.W   R15, R14
+   \   00006E   0B2C         JC      ??CheckPilot_16
+     56              {
+     57                if(Pilot_State=='D')
+   \   000070   1F42....     MOV.W   &Pilot_Num, R15
+   \   000074   F2904400.... CMP.B   #0x44, &Pilot_State
+   \   00007A   B012....     CALL    #?Subroutine0
+     58                {
+     59                  if(Pilot_Num<20000)
+     60                    Pilot_Num ++;
+     61                }
+     62                else
+     63                  Pilot_Num=0;
+     64                
+     65                Pilot_State='D';
+   \                     ??CrossCallReturnLabel_3:
+   \   00007E   F2404400.... MOV.B   #0x44, &Pilot_State
+     66                return;
+   \   000084   3041         RET
+     67              }
+     68              
+     69               if((Pilot_H<2003)|(Pilot_H>63532))   //-1V<Pilot_H<1V
+   \                     ??CheckPilot_16:
+   \   000086   3C90D307     CMP.W   #0x7d3, R12
+   \   00008A   0D28         JNC     ??CheckPilot_17
+   \   00008C   3C902DF8     CMP.W   #0xf82d, R12
+   \   000090   0A2C         JC      ??CheckPilot_17
+     70              {
+     71                if(Pilot_State=='E')
+     72                {
+     73                 if(Pilot_Num<20000)
+     74                    Pilot_Num ++;
+     75                }
+     76                else
+     77                  Pilot_Num=0;
+     78                
+     79                Pilot_State='E';
+     80                return;
+     81              }
+     82              
+     83              if((Pilot_H<43500)&(Pilot_H>39493))   //-13V<Pilot_H<-11V
+   \   000092   3C50BA65     ADD.W   #0x65ba, R12
+   \   000096   0C9F         CMP.W   R15, R12
+   \   000098   1128         JNC     ??CheckPilot_18
+     84              {
+     85                if(Pilot_State=='F')
+     86                {
+     87                  if(Pilot_Num<20000)
+     88                    Pilot_Num ++;
+     89                }
+     90                else
+     91                  Pilot_Num=0;
+     92                
+     93                Pilot_State='F';
+     94                return;
+     95              }
+     96             Pilot_Num=0;
+   \   00009A   8243....     MOV.W   #0x0, &Pilot_Num
+     97             Pilot_State='G';
+   \   00009E   F2404700.... MOV.B   #0x47, &Pilot_State
+     98                
+     99          }
+   \   0000A4   3041         RET
+   \                     ??CheckPilot_17:
+   \   0000A6   1F42....     MOV.W   &Pilot_Num, R15
+   \   0000AA   F2904500.... CMP.B   #0x45, &Pilot_State
+   \   0000B0   B012....     CALL    #?Subroutine0
+   \                     ??CrossCallReturnLabel_4:
+   \   0000B4   F2404500.... MOV.B   #0x45, &Pilot_State
+   \   0000BA   3041         RET
+   \                     ??CheckPilot_18:
+   \   0000BC   1F42....     MOV.W   &Pilot_Num, R15
+   \   0000C0   F2904600.... CMP.B   #0x46, &Pilot_State
+   \   0000C6   B012....     CALL    #?Subroutine0
+   \                     ??CrossCallReturnLabel_5:
+   \   0000CA   F2404600.... MOV.B   #0x46, &Pilot_State
+   \   0000D0   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine0:
+   \   000000   0520         JNE     ??CheckPilot_1
+   \   000002   3F90204E     CMP.W   #0x4e20, R15
+   \   000006   032C         JC      ??CheckPilot_2
+   \   000008   1F53         ADD.W   #0x1, R15
+   \   00000A   013C         JMP     ??CheckPilot_2
+   \                     ??CheckPilot_1:
+   \   00000C   0F43         MOV.W   #0x0, R15
+   \                     ??CheckPilot_2:
+   \   00000E   824F....     MOV.W   R15, &Pilot_Num
+   \   000012   3041         RET
+    100          
+
+   \                                 In  segment CODE, align 2
+    101          void ControlPilot_ON()  //Duty=TA0CCR1
+   \                     ControlPilot_ON:
+    102          {  
+    103             if(TACCR1<240)
+   \   000000   B290F0007401 CMP.W   #0xf0, &0x174
+   \   000006   032C         JC      ??ControlPilot_ON_0
+    104               TACCR1=8000;
+   \   000008   B240401F7401 MOV.W   #0x1f40, &0x174
+    105             P1SEL |= BIT1;
+   \                     ??ControlPilot_ON_0:
+   \   00000E   E2D32600     BIS.B   #0x2, &0x26
+    106             TACCTL1 = OUTMOD_7; 
+   \   000012   B240E0006401 MOV.W   #0xe0, &0x164
+    107          }
+   \   000018   3041         RET
+   \   00001A                REQUIRE TACCR1
+   \   00001A                REQUIRE P1SEL
+   \   00001A                REQUIRE TACCTL1
+    108          
+
+   \                                 In  segment CODE, align 2
+    109          void ControlPilot_OFF()
+   \                     ControlPilot_OFF:
+    110          {  
+    111             P1SEL &= ~(BIT1);
+   \   000000   E2C32600     BIC.B   #0x2, &0x26
+    112             P1OUT |= BIT1;
+   \   000004   E2D32100     BIS.B   #0x2, &0x21
+    113             TACCTL1 = OUTMOD_0;  
+   \   000008   82436401     MOV.W   #0x0, &0x164
+    114          }
+   \   00000C   3041         RET
+   \   00000E                REQUIRE P1SEL
+   \   00000E                REQUIRE P1OUT
+   \   00000E                REQUIRE TACCTL1
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   CheckPilot
+      2   ControlPilot_OFF
+      2   ControlPilot_ON
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      20  ?Subroutine0
+     210  CheckPilot
+      14  ControlPilot_OFF
+      26  ControlPilot_ON
+       1  P1OUT
+       1  P1SEL
+       2  TACCR1
+       2  TACCTL1
+
+ 
+ 270 bytes in segment CODE
+   6 bytes in segment DATA16_AN
+ 
+ 270 bytes of CODE memory
+   0 bytes of DATA memory (+ 6 bytes shared)
+
+Errors: none
+Warnings: none

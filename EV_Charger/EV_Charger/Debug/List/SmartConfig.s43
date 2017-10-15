@@ -1,0 +1,284 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:44
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\SmartConfig.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\SmartConfig.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\SmartConfig.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME SmartConfig
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBLIC StartSmartConfig
+
+        EXTERN stopCharge
+        EXTERN ulSmartConfigFinished
+        EXTERN ulCC3000Connected
+        EXTERN ulCC3000DHCP
+        EXTERN OkToDoShutDown
+        EXTERN wlan_ioctl_set_connection_policy
+        EXTERN wlan_ioctl_del_profile
+        EXTERN aucCC3000_prefix
+        EXTERN wlan_smart_config_set_prefix
+        EXTERN wlan_smart_config_start
+        EXTERN startCharge
+        EXTERN wlan_stop
+        EXTERN wlan_start
+        EXTERN wlan_set_event_mask
+
+// Z:\EV_Charger\Source\EV_Charger\SmartConfig.c
+//    1 #include "wlan.h" 
+//    2 #include "evnt_handler.h"    
+//    3 #include "nvmem.h"
+//    4 #include "socket.h"
+//    5 #include "netapp.h"
+//    6 #include "spi.h"
+//    7 #include "spi_version.h"
+//    8 #include "board.h"
+//    9 #include "application_version.h"
+//   10 #include "host_driver_version.h"
+//   11 #include "security.h"
+//   12 #include "Main.h"
+//   13 #include "board.h"
+//   14 #include "Analog_sampling.h"
+//   15 #include "ControlPilot.h"
+//   16 #include "Listener.h"
+//   17 #include "SmartConfig.h"
+//   18 #include "Wattmeter.h"
+//   19 #include "Wifi.h"
+//   20 
+//   21 #include <msp430.h>
+//   22 
+//   23 
+//   24 //!  @brief  The function triggers a smart configuration process on CC3000.
+//   25 //!			it exists upon completion of the process
+//   26 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   27 void StartSmartConfig(void)
+StartSmartConfig:
+//   28 {
+//   29     stopCharge();
+        CALL    #stopCharge
+//   30     ulSmartConfigFinished = 0;
+        MOV.W   #0x0, &ulSmartConfigFinished
+        MOV.W   #0x0, &ulSmartConfigFinished + 2
+//   31     ulCC3000Connected = 0;
+        MOV.W   #0x0, &ulCC3000Connected
+        MOV.W   #0x0, &ulCC3000Connected + 2
+//   32     ulCC3000DHCP = 0;
+        MOV.W   #0x0, &ulCC3000DHCP
+        MOV.W   #0x0, &ulCC3000DHCP + 2
+//   33     OkToDoShutDown=0;
+        MOV.W   #0x0, &OkToDoShutDown
+        MOV.W   #0x0, &OkToDoShutDown + 2
+//   34     
+//   35     // Reset all the previous configuration
+//   36     wlan_ioctl_set_connection_policy(DISABLE, DISABLE, DISABLE);	
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        CALL    #?Subroutine1
+//   37     wlan_ioctl_del_profile(255);
+??CrossCallReturnLabel_4:
+        MOV.B   #0xff, R12
+        MOV.W   #0x0, R13
+        CALL    #wlan_ioctl_del_profile
+//   38     
+//   39      // Reset all the previous configuration
+//   40     wlan_ioctl_set_connection_policy(DISABLE, DISABLE, DISABLE);	
+        PUSH.W  #0x0
+        PUSH.W  #0x0
+        CALL    #?Subroutine1
+//   41     wlan_ioctl_del_profile(255);
+??CrossCallReturnLabel_3:
+        MOV.B   #0xff, R12
+        MOV.W   #0x0, R13
+        CALL    #wlan_ioctl_del_profile
+        ADD.W   #0x8, SP
+        JMP     ??StartSmartConfig_2
+//   42     
+//   43     // Wait until CC3000 is disconnected
+//   44     while (ulCC3000Connected == 1)
+//   45     {
+//   46             __delay_cycles(333);
+??StartSmartConfig_0:
+        ////////////// Start of 333 cycles delay.
+        NOP
+        MOV.W   #0x6d, R15
+??StartSmartConfig_5:
+        ADD.W   #0xffff, R15
+        JC      ??StartSmartConfig_5
+        ////////////// End of delay code.
+//   47     }
+??StartSmartConfig_2:
+        CMP.W   #0x1, &ulCC3000Connected
+        JNE     ??StartSmartConfig_3
+        CMP.W   #0x0, &ulCC3000Connected + 2
+        JEQ     ??StartSmartConfig_0
+//   48     
+//   49     // Trigger the Smart Config process
+//   50  	
+//   51     wlan_smart_config_set_prefix((char*)aucCC3000_prefix);
+??StartSmartConfig_3:
+        MOV.W   #aucCC3000_prefix, R12
+        CALL    #wlan_smart_config_set_prefix
+//   52 	     
+//   53     
+//   54     // Start the SmartConfig start process
+//   55 #ifdef CC3000_UNENCRYPTED_SMART_CONFIG
+//   56     wlan_smart_config_start(0);
+        MOV.W   #0x0, R12
+        MOV.W   #0x0, R13
+        CALL    #wlan_smart_config_start
+//   57 #else
+//   58     wlan_smart_config_start(1);
+//   59 #endif  
+//   60     startCharge();                                                                         
+        CALL    #startCharge
+        JMP     ??StartSmartConfig_4
+//   61     // Wait for Smartconfig process complete
+//   62     while (ulSmartConfigFinished == 0)
+//   63     {
+//   64         __delay_cycles(2000000);
+??StartSmartConfig_1:
+        CALL    #?Subroutine0
+//   65         __delay_cycles(2000000);                     
+??CrossCallReturnLabel_0:
+        CALL    #?Subroutine0
+//   66     }
+??StartSmartConfig_4:
+        MOV.W   &ulSmartConfigFinished, R15
+        BIS.W   &ulSmartConfigFinished + 2, R15
+        CMP.W   #0x0, R15
+        JEQ     ??StartSmartConfig_1
+//   67     
+//   68     stopCharge();
+        CALL    #stopCharge
+//   69 
+//   70 #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
+//   71     // Create new entry for AES encryption key
+//   72     nvmem_create_entry(NVMEM_AES128_KEY_FILEID,16);
+//   73     
+//   74     // Write AES key to NVMEM
+//   75     aes_write_key((unsigned char *)(&smartconfigkey[0]));
+//   76     turnLedOn();
+//   77     // Decrypt configuration information and add profile
+//   78     wlan_smart_config_process();
+//   79     turnLedOff();
+//   80 #endif    
+//   81     
+//   82     // Configure to connect automatically to the AP retrieved in the 
+//   83     // Smart config process
+//   84     wlan_ioctl_set_connection_policy(DISABLE, ENABLE, ENABLE);
+        PUSH.W  #0x0
+        PUSH.W  #0x1
+        MOV.W   #0x1, R14
+        CALL    #??Subroutine2_0
+//   85     
+//   86     // Reset the CC3000
+//   87     wlan_stop();
+??CrossCallReturnLabel_2:
+        CALL    #wlan_stop
+//   88     
+//   89     __delay_cycles(2000000);
+        CALL    #?Subroutine0
+//   90     
+//   91     wlan_start(0);
+??CrossCallReturnLabel_1:
+        MOV.W   #0x0, R12
+        CALL    #wlan_start
+//   92     
+//   93     // Mask out all non-required events
+//   94     wlan_set_event_mask(HCI_EVENT_MASK);
+        MOV.W   #0x8244, R12
+        MOV.W   #0x0, R13
+        CALL    #wlan_set_event_mask
+//   95     
+//   96     __delay_cycles(20000000);  
+        ////////////// Start of 20000000 cycles delay.
+        MOV.W   #0x4b3e, R15
+        MOV.W   #0x4c, R14
+??StartSmartConfig_6:
+        ADD.W   #0xffff, R15
+        ADDC.W  #0xffff, R14
+        JC      ??StartSmartConfig_6
+        ////////////// End of delay code.
+//   97     
+//   98     //datos= "ConfigOK";            
+//   99         
+//  100 }
+        ADD.W   #0x4, SP
+        RET
+
+        RSEG CODE:CODE:NOROOT(1)
+?Subroutine1:
+        MOV.W   #0x0, R14
+        REQUIRE ??Subroutine2_0
+        // Fall through to label ??Subroutine2_0
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+??Subroutine2_0:
+        MOV.W   #0x0, R15
+        MOV.W   #0x0, R12
+        MOV.W   #0x0, R13
+        BR      #wlan_ioctl_set_connection_policy
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine0:
+        ////////////// Start of 2000000 cycles delay.
+        MOV.W   #0xa11e, R15
+        MOV.W   #0x7, R14
+??Subroutine0_0:
+        ADD.W   #0xffff, R15
+        ADDC.W  #0xffff, R14
+        JC      ??Subroutine0_0
+        ////////////// End of delay code.
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+// 
+// 220 bytes in segment CODE
+// 
+// 220 bytes of CODE memory
+//
+//Errors: none
+//Warnings: none

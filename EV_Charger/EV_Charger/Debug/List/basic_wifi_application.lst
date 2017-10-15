@@ -1,0 +1,2925 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           19/Oct/2016  09:24:08
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  
+#        Z:\EV_Charger\Source\BasicWiFi Application\basic_wifi_application.c
+#    Command line  =  
+#        "Z:\EV_Charger\Source\BasicWiFi Application\basic_wifi_application.c"
+#        -D CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --no_code_motion --debug
+#        -D__MSP430AFE253__ -e --double=32 --dlib_config "C:\Archivos de
+#        programa\IAR Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  
+#        Z:\EV_Charger\EV_Charger\Debug\List\basic_wifi_application.lst
+#    Object file   =  
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\basic_wifi_application.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\BasicWiFi Application\basic_wifi_application.c
+      1          #include "wlan.h" 
+      2          #include "evnt_handler.h"    
+      3          #include "nvmem.h"
+      4          #include "socket.h"
+      5          #include "netapp.h"
+      6          #include "spi.h"
+      7          #include "spi_version.h"
+      8          #include "board.h"
+      9          #include "application_version.h"
+     10          #include "host_driver_version.h"
+     11          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x0
+   \   unsigned char volatile IE1
+   \                     IE1:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_AN, at 0x106
+   \   unsigned short volatile SD24CCTL2
+   \                     SD24CCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x110
+   \   unsigned short volatile SD24MEM0
+   \                     SD24MEM0:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x112
+   \   unsigned short volatile SD24MEM1
+   \                     SD24MEM1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x114
+   \   unsigned short volatile SD24MEM2
+   \                     SD24MEM2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x1ae
+   \   unsigned short volatile SD24IV
+   \                     SD24IV:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x120
+   \   unsigned short volatile WDTCTL
+   \                     WDTCTL:
+   \   000000                DS8 2
+     12          #include "security.h"
+     13          
+     14          #define PALTFORM_VERSION                               (1)
+     15          
+     16          
+     17          //#define CC3000_APP_BUFFER_SIZE                         (5)
+     18          #define CC3000_APP_BUFFER_SIZE                         (2)
+     19          #define CC3000_RX_BUFFER_OVERHEAD_SIZE                 (20)
+     20          
+     21          #define DISABLE                                        (0)
+     22          #define ENABLE                                         (1)
+     23          
+     24          #define SL_VERSION_LENGTH                              (11)
+     25          #define NETAPP_IPCONFIG_MAC_OFFSET                     (20)
+     26          
+     27          #define HCI_EVENT_MASK                                 (HCI_EVNT_WLAN_KEEPALIVE | HCI_EVNT_WLAN_UNSOL_INIT | HCI_EVNT_WLAN_ASYNC_PING_REPORT)
+     28          
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     29          volatile unsigned long ulSmartConfigFinished, ulCC3000Connected,ulCC3000DHCP, OkToDoShutDown, ulCC3000DHCP_configured;
+   \                     ulSmartConfigFinished:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000Connected:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000DHCP:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     OkToDoShutDown:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+   \                     ulCC3000DHCP_configured:
+   \   000000                DS8 4
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     30          volatile unsigned char ucStopSmartConfig;
+   \                     ucStopSmartConfig:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     31          volatile long ulSocket;
+   \                     ulSocket:
+   \   000000                DS8 4
+     32          
+     33          // Simple Config Prefix
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+     34          const char aucCC3000_prefix[] = {'T', 'T', 'T'};
+   \                     aucCC3000_prefix:
+   \   000000   545454       DC8 84, 84, 84
+     35          
+
+   \                                 In  segment DATA16_I, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_copy
+     36          unsigned char printOnce = 1;
+   \                     printOnce:
+   \   000000                DS8 1
+   \   000001                REQUIRE `?<Initializer for printOnce>`
+
+   \                                 In  segment DATA16_I, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_copy
+     37          char digits[] = "0123456789";
+   \                     digits:
+   \   000000                DS8 11
+   \   00000B                REQUIRE `?<Initializer for digits>`
+     38          
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     39          static char *datos;
+   \                     datos:
+   \   000000                DS8 2
+     40          //***********************PILOT AND POWER MEAS**********************************
+     41          //#define KP 0.0000094432777311898429285396229137072     //Constante de proporcionalidad entre la energía real (Wh) y el valor calculado
+     42          //#define Kv 563.3134586459090909090909090909
+     43          //#define Ki 50
+     44          //#define Kc 0.000000000335276126861572265625
+     45          
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     46          static signed long long powerSummation=0;                //64 bits
+   \                     powerSummation:
+   \   000000                DS8 8
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     47          static char SmartConfigControl=0;
+   \                     SmartConfigControl:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     48          static char controlMeas=0;
+   \                     controlMeas:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     49          static char status=0;
+   \                     status:
+   \   000000                DS8 1
+     50          //******************************************************************************
+     51          
+     52          //*******************FSM*******************************************************
+     53          #define 	Idle            'A'
+     54          #define         Charging        'B'     
+     55          #define         SendData        'C'
+     56          #define         IPConfig        'D'
+     57          
+     58          void init_system(void);
+     59          char output_logic(void);
+     60          char state_logic(void);
+     61          
+
+   \                                 In  segment DATA16_I, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_copy
+     62          static char present_state = Idle; 
+   \                     present_state:
+   \   000000                DS8 1
+   \   000001                REQUIRE `?<Initializer for present_state>`
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     63          static unsigned char flag_SendData=0;
+   \                     flag_SendData:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     64          static unsigned char flag_EnableCharge=0;
+   \                     flag_EnableCharge:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     65          static unsigned char flag_IPConfiguration=0;
+   \                     flag_IPConfiguration:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     66          static unsigned char flag_sendConsumption;
+   \                     flag_sendConsumption:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     67          static unsigned char vehicleStatusChange=0;
+   \                     vehicleStatusChange:
+   \   000000                DS8 1
+     68          //******************************************************************************
+     69          
+     70          
+
+   \                                 In  segment DATA16_N, align 1, align-sorted
+     71          __no_init unsigned char pucCC3000_Rx_Buffer[CC3000_APP_BUFFER_SIZE + CC3000_RX_BUFFER_OVERHEAD_SIZE];
+   \                     pucCC3000_Rx_Buffer:
+   \   000000                DS8 22
+     72          
+     73          
+     74          //! @brief  Convert integer to ASCII in decimal base
+
+   \                                 In  segment CODE, align 2
+     75          unsigned short itoa(char cNum, char *cString)
+   \                     itoa:
+     76          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+   \   000008   4B4C         MOV.B   R12, R11
+   \   00000A   084D         MOV.W   R13, R8
+     77              char* ptr;
+     78              char uTemp = cNum;
+   \   00000C   494C         MOV.B   R12, R9
+     79              unsigned short length;
+     80          
+     81              // Value 0 is a special case
+     82              if (cNum == 0)
+   \   00000E   4C93         CMP.B   #0x0, R12
+   \   000010   0520         JNE     ??itoa_2
+     83              {
+     84                  length = 1;
+     85                  *cString = '0';
+   \   000012   FD4030000000 MOV.B   #0x30, 0(R13)
+     86                  
+     87                  return length;
+   \   000018   1C43         MOV.W   #0x1, R12
+   \   00001A   163C         JMP     ??itoa_3
+     88              }
+     89          
+     90              // Find out the length of the number, in decimal base
+     91              length = 0;
+   \                     ??itoa_2:
+   \   00001C   0A43         MOV.W   #0x0, R10
+     92              while (uTemp > 0)
+     93              {
+     94                  uTemp /= 10;
+   \                     ??itoa_0:
+   \   00001E   B012....     CALL    #?Subroutine17
+   \                     ??CrossCallReturnLabel_45:
+   \   000022   494C         MOV.B   R12, R9
+     95                  length++;
+   \   000024   1A53         ADD.W   #0x1, R10
+     96              }
+   \   000026   4C93         CMP.B   #0x0, R12
+   \   000028   FA23         JNE     ??itoa_0
+     97          
+     98              // Do the actual formatting, right to left
+     99              uTemp = cNum;
+   \   00002A   494B         MOV.B   R11, R9
+    100              ptr = cString + length;
+   \   00002C   085A         ADD.W   R10, R8
+    101              while (uTemp > 0)
+    102              {
+    103                  --ptr;
+   \                     ??itoa_1:
+   \   00002E   3853         ADD.W   #0xffff, R8
+    104                  *ptr = digits[uTemp % 10];
+   \   000030   B012....     CALL    #?Subroutine17
+   \                     ??CrossCallReturnLabel_46:
+   \   000034   4E4E         MOV.B   R14, R14
+   \   000036   D84E....0000 MOV.B   digits(R14), 0(R8)
+    105                  uTemp /= 10;
+   \   00003C   B012....     CALL    #?Subroutine17
+    106              }
+   \                     ??CrossCallReturnLabel_47:
+   \   000040   494C         MOV.B   R12, R9
+   \   000042   4C93         CMP.B   #0x0, R12
+   \   000044   F423         JNE     ??itoa_1
+    107          
+    108              return length;
+   \   000046   0C4A         MOV.W   R10, R12
+   \                     ??itoa_3:
+   \   000048   3040....     BR      #?Epilogue4
+    109          }
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine17:
+   \   000000   4C49         MOV.B   R9, R12
+   \   000002   7E400A00     MOV.B   #0xa, R14
+   \   000006   3040....     BR      #?DivMod8u
+    110          
+    111          //! @brief  Convert nibble to hexdecimal from ASCII
+
+   \                                 In  segment CODE, align 2
+    112          unsigned char atoc(char data)
+   \                     atoc:
+    113          {
+    114              unsigned char ucRes;
+    115          
+    116              if ((data >= 0x30) && (data <= 0x39))
+   \   000000   4F4C         MOV.B   R12, R15
+   \   000002   7F50D000     ADD.B   #0xd0, R15
+   \   000006   7F900A00     CMP.B   #0xa, R15
+   \   00000A   042C         JC      ??atoc_0
+    117              {
+    118                  ucRes = data - 0x30;
+   \   00000C   7C50D000     ADD.B   #0xd0, R12
+   \   000010   4E4C         MOV.B   R12, R14
+   \   000012   233C         JMP     ??atoc_1
+    119              }
+    120              else
+    121              {
+    122                  if (data == 'a')
+   \                     ??atoc_0:
+   \   000014   7C906100     CMP.B   #0x61, R12
+   \   000018   0320         JNE     ??atoc_2
+    123                  {
+    124                      ucRes = 0x0a;;
+   \   00001A   7E400A00     MOV.B   #0xa, R14
+   \   00001E   1D3C         JMP     ??atoc_1
+    125                  }
+    126                  else if (data == 'b')
+   \                     ??atoc_2:
+   \   000020   7C906200     CMP.B   #0x62, R12
+   \   000024   0320         JNE     ??atoc_3
+    127                  {
+    128                      ucRes = 0x0b;
+   \   000026   7E400B00     MOV.B   #0xb, R14
+   \   00002A   173C         JMP     ??atoc_1
+    129                  }
+    130                  else if (data == 'c')
+   \                     ??atoc_3:
+   \   00002C   7C906300     CMP.B   #0x63, R12
+   \   000030   0320         JNE     ??atoc_4
+    131                  {
+    132                      ucRes = 0x0c;
+   \   000032   7E400C00     MOV.B   #0xc, R14
+   \   000036   113C         JMP     ??atoc_1
+    133                  }
+    134                  else if (data == 'd')
+   \                     ??atoc_4:
+   \   000038   7C906400     CMP.B   #0x64, R12
+   \   00003C   0320         JNE     ??atoc_5
+    135                  {
+    136                      ucRes = 0x0d;
+   \   00003E   7E400D00     MOV.B   #0xd, R14
+   \   000042   0B3C         JMP     ??atoc_1
+    137                  }
+    138                  else if (data == 'e')
+   \                     ??atoc_5:
+   \   000044   7C906500     CMP.B   #0x65, R12
+   \   000048   0320         JNE     ??atoc_6
+    139                  {
+    140                      ucRes = 0x0e;
+   \   00004A   7E400E00     MOV.B   #0xe, R14
+   \   00004E   053C         JMP     ??atoc_1
+    141                  }
+    142                  else if (data == 'f')
+   \                     ??atoc_6:
+   \   000050   7C906600     CMP.B   #0x66, R12
+   \   000054   0220         JNE     ??atoc_1
+    143                  {
+    144                      ucRes = 0x0f;
+   \   000056   7E400F00     MOV.B   #0xf, R14
+    145                  }
+    146              }
+    147          
+    148              return ucRes;
+   \                     ??atoc_1:
+   \   00005A   4C4E         MOV.B   R14, R12
+   \   00005C   3041         RET
+    149          }
+    150          
+    151          //! @brief  Convert 2 nibbles in ASCII into a short number
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ??Subroutine1_0:
+   \   000000   3B41         POP.W   R11
+   \   000002   3A41         POP.W   R10
+   \   000004   3041         RET
+
+   \                                 In  segment CODE, align 2
+    152          unsigned short atoshort(char b1, char b2)
+   \                     atoshort:
+    153          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   4B4D         MOV.B   R13, R11
+    154              unsigned short usRes;
+    155          
+    156              usRes = (atoc(b1)) * 16 | atoc(b2);
+    157          
+    158              return usRes;
+   \   000006   B012....     CALL    #atoc
+   \   00000A   4A4C         MOV.B   R12, R10
+   \   00000C   4C4B         MOV.B   R11, R12
+   \   00000E   B012....     CALL    #atoc
+   \   000012   4F4C         MOV.B   R12, R15
+   \   000014   4C4A         MOV.B   R10, R12
+   \   000016   B012....     CALL    #?ShiftLeft16_4
+   \   00001A   0CDF         BIS.W   R15, R12
+   \   00001C   ....         JMP     ??Subroutine1_0
+    159          }
+    160          
+    161          //! @brief  Convert 2 bytes in ASCII into one character
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    162          unsigned char ascii_to_char(char b1, char b2)
+   \                     ascii_to_char:
+    163          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   4A4D         MOV.B   R13, R10
+    164              unsigned char ucRes;
+    165          
+    166              ucRes = (atoc(b1)) << 4 | (atoc(b2));
+    167          
+    168              return ucRes;
+   \   000006   B012....     CALL    #atoc
+   \   00000A   4B4C         MOV.B   R12, R11
+   \   00000C   4C4A         MOV.B   R10, R12
+   \   00000E   B012....     CALL    #atoc
+   \   000012   4E4C         MOV.B   R12, R14
+   \   000014   4C4B         MOV.B   R11, R12
+   \   000016   B012....     CALL    #?ShiftLeft16_4
+   \   00001A   4CDE         BIS.B   R14, R12
+   \   00001C   ....         JMP     ??Subroutine1_0
+    169          }
+    170          
+    171          //! @brief  The function returns a pointer to the driver patch: since there is  
+    172          //!         no patch (patches are taken from the EEPROM and not from the host
+    173          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine2:
+   \   000000   8C430000     MOV.W   #0x0, 0(R12)
+   \   000004   8C430200     MOV.W   #0x0, 0x2(R12)
+   \   000008   0C43         MOV.W   #0x0, R12
+   \   00000A   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    174          char *sendDriverPatch(unsigned long *Length)
+   \                     sendDriverPatch:
+    175          {
+    176              *Length = 0;
+   \   000000   ....         JMP     ?Subroutine2
+    177              return NULL;
+    178          }
+    179          
+    180          //! @brief  The function returns a pointer to the bootloader patch: since there   
+    181          //!         is no patch (patches are taken from the EEPROM and not from the host
+    182          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    183          char *sendBootLoaderPatch(unsigned long *Length)
+   \                     sendBootLoaderPatch:
+    184          {
+    185              *Length = 0;
+   \   000000   ....         JMP     ?Subroutine2
+    186              return NULL;
+    187          }
+    188          
+    189          
+    190          //! @brief  The function returns a pointer to the driver patch: since there is  
+    191          //!         no patch (patches are taken from the EEPROM and not from the host
+    192          //!         - it returns NULL
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    193          char *sendWLFWPatch(unsigned long *Length)
+   \                     sendWLFWPatch:
+    194          {
+    195              *Length = 0;
+   \   000000                REQUIRE ?Subroutine2
+   \   000000                // Fall through to label ?Subroutine2
+    196              return NULL;
+    197          }
+    198          
+    199          //! @brief  The function handles asynchronous events that come from CC3000  
+    200          //!         device and operates a LED1 to have an on-board indication
+    201          
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    202          void CC3000_UsynchCallback(long lEventType, char * data, unsigned char length)
+   \                     CC3000_UsynchCallback:
+    203          {
+    204              if (lEventType == HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE)
+   \   000000   3C908080     CMP.W   #0x8080, R12
+   \   000004   0920         JNE     ??CC3000_UsynchCallback_0
+   \   000006   0D93         CMP.W   #0x0, R13
+   \   000008   0720         JNE     ??CC3000_UsynchCallback_0
+    205              {
+    206                  ulSmartConfigFinished = 1;
+   \   00000A   9243....     MOV.W   #0x1, &ulSmartConfigFinished
+   \   00000E   8243....     MOV.W   #0x0, &ulSmartConfigFinished + 2
+    207                  ucStopSmartConfig     = 1;  
+   \   000012   D243....     MOV.B   #0x1, &ucStopSmartConfig
+   \   000016   3041         RET
+    208              }
+    209          
+    210              if (lEventType == HCI_EVNT_WLAN_UNSOL_CONNECT)
+   \                     ??CC3000_UsynchCallback_0:
+   \   000018   3C900180     CMP.W   #0x8001, R12
+   \   00001C   0720         JNE     ??CC3000_UsynchCallback_1
+   \   00001E   0D93         CMP.W   #0x0, R13
+   \   000020   0520         JNE     ??CC3000_UsynchCallback_1
+   \   000022   9243....     MOV.W   #0x1, &ulCC3000Connected
+   \   000026   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+   \   00002A   3041         RET
+    211              {
+    212                  ulCC3000Connected = 1;
+    213                
+    214                  // Turn on the LED7
+    215          
+    216              }
+    217          
+    218              if (lEventType == HCI_EVNT_WLAN_UNSOL_DISCONNECT)
+   \                     ??CC3000_UsynchCallback_1:
+   \   00002C   3C900280     CMP.W   #0x8002, R12
+   \   000030   0B20         JNE     ??CC3000_UsynchCallback_2
+   \   000032   0D93         CMP.W   #0x0, R13
+   \   000034   0920         JNE     ??CC3000_UsynchCallback_2
+    219              {		
+    220                  ulCC3000Connected = 0;
+   \   000036   B012....     CALL    #?Subroutine4
+    221                  ulCC3000DHCP      = 0;
+    222                  ulCC3000DHCP_configured = 0;
+   \                     ??CrossCallReturnLabel_64:
+   \   00003A   8243....     MOV.W   #0x0, &ulCC3000DHCP_configured
+   \   00003E   8243....     MOV.W   #0x0, &ulCC3000DHCP_configured + 2
+    223                  printOnce = 1;
+   \   000042   D243....     MOV.B   #0x1, &printOnce
+   \   000046   3041         RET
+    224                 
+    225                  // Turn off the LED7
+    226          
+    227                  
+    228                  // Turn off LED5
+    229                   
+    230              }
+    231          
+    232              if (lEventType == HCI_EVNT_WLAN_UNSOL_DHCP)
+   \                     ??CC3000_UsynchCallback_2:
+   \   000048   3C901080     CMP.W   #0x8010, R12
+   \   00004C   1E20         JNE     ??CC3000_UsynchCallback_3
+   \   00004E   0D93         CMP.W   #0x0, R13
+   \   000050   1C20         JNE     ??CC3000_UsynchCallback_3
+    233              {
+    234                  // Notes: 
+    235                  // 1) IP config parameters are received swapped
+    236                  // 2) IP config parameters are valid only if status is OK, 
+    237                  // i.e. ulCC3000DHCP becomes 1
+    238          
+    239                  // Only if status is OK, the flag is set to 1 and the 
+    240                  // addresses are valid.
+    241                  if ( *(data + NETAPP_IPCONFIG_MAC_OFFSET) == 0)
+   \   000052   CE931400     CMP.B   #0x0, 0x14(R14)
+   \   000056   0224         JEQ     ??CC3000_UsynchCallback_4
+   \   000058   3040....     BR      #??Subroutine4_1
+    242                  {
+    243                      sprintf((char*)pucCC3000_Rx_Buffer,"IP:%d.%d.%d.%d\f\r", data[3],data[2], data[1], data[0]);
+   \                     ??CC3000_UsynchCallback_4:
+   \   00005C   6F4E         MOV.B   @R14, R15
+   \   00005E   0F12         PUSH.W  R15
+   \   000060   5F4E0100     MOV.B   0x1(R14), R15
+   \   000064   0F12         PUSH.W  R15
+   \   000066   5F4E0200     MOV.B   0x2(R14), R15
+   \   00006A   0F12         PUSH.W  R15
+   \   00006C   5F4E0300     MOV.B   0x3(R14), R15
+   \   000070   0F12         PUSH.W  R15
+   \   000072   3D40....     MOV.W   #`?<Constant "IP:%d.%d.%d.%d\\f\\r">`, R13
+   \   000076   3C40....     MOV.W   #pucCC3000_Rx_Buffer, R12
+   \   00007A   B012....     CALL    #sprintf
+    244                      ulCC3000DHCP = 1;
+   \   00007E   9243....     MOV.W   #0x1, &ulCC3000DHCP
+   \   000082   8243....     MOV.W   #0x0, &ulCC3000DHCP + 2
+   \   000086   3152         ADD.W   #0x8, SP
+   \   000088   3041         RET
+    245          
+    246                  }
+    247                  else
+    248                  {
+    249                      ulCC3000DHCP = 0;
+    250          
+    251                  }
+    252              }
+    253          
+    254              if (lEventType == HCI_EVENT_CC3000_CAN_SHUT_DOWN)
+   \                     ??CC3000_UsynchCallback_3:
+   \   00008A   3C909900     CMP.W   #0x99, R12
+   \   00008E   0620         JNE     ??CC3000_UsynchCallback_5
+   \   000090   0D93         CMP.W   #0x0, R13
+   \   000092   0420         JNE     ??CC3000_UsynchCallback_5
+    255              {
+    256                  OkToDoShutDown = 1;
+   \   000094   9243....     MOV.W   #0x1, &OkToDoShutDown
+   \   000098   8243....     MOV.W   #0x0, &OkToDoShutDown + 2
+    257              }	
+    258          }
+   \                     ??CC3000_UsynchCallback_5:
+   \   00009C   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine4:
+   \   000000   8243....     MOV.W   #0x0, &ulCC3000Connected
+   \   000004   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+   \   000008                REQUIRE ??Subroutine4_1
+   \   000008                // Fall through to label ??Subroutine4_1
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ??Subroutine4_1:
+   \   000000   8243....     MOV.W   #0x0, &ulCC3000DHCP
+   \   000004   8243....     MOV.W   #0x0, &ulCC3000DHCP + 2
+   \   000008   3041         RET
+    259          
+    260          
+    261          //!  @brief  The function initializes a CC3000 device and triggers it to 
+    262          //!          start operation
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    263          int
+    264          initDriver(void)
+   \                     initDriver:
+    265          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   31803200     SUB.W   #0x32, SP
+    266              initClk();    
+   \   000008   B012....     CALL    #initClk
+    267              pio_init();
+   \   00000C   B012....     CALL    #pio_init
+    268              init_spi();
+   \   000010   B012....     CALL    #init_spi
+    269          
+    270              // WLAN On API Implementation
+    271              wlan_init(CC3000_UsynchCallback, sendWLFWPatch, sendDriverPatch, sendBootLoaderPatch, ReadWlanInterruptPin, WlanInterruptEnable, WlanInterruptDisable, WriteWlanPin);
+   \   000014   3012....     PUSH.W  #WriteWlanPin
+   \   000018   3012....     PUSH.W  #WlanInterruptDisable
+   \   00001C   3012....     PUSH.W  #WlanInterruptEnable
+   \   000020   3012....     PUSH.W  #ReadWlanInterruptPin
+   \   000024   3F40....     MOV.W   #sendBootLoaderPatch, R15
+   \   000028   3E40....     MOV.W   #sendDriverPatch, R14
+   \   00002C   3D40....     MOV.W   #sendWLFWPatch, R13
+   \   000030   3C40....     MOV.W   #CC3000_UsynchCallback, R12
+   \   000034   B012....     CALL    #wlan_init
+    272          
+    273              // Trigger a WLAN device
+    274              wlan_start(0);
+   \   000038   B012....     CALL    #?Subroutine10
+    275          
+    276              // Mask out all non-required events from CC3000
+    277              wlan_set_event_mask(HCI_EVENT_MASK);
+    278          
+    279              // Generate the event to CLI: send a version string
+    280              {
+    281                  char cc3000IP[50];
+    282                  char *ccPtr;
+    283                  unsigned short ccLen;
+    284                               
+    285                  ccPtr = &cc3000IP[0];
+    286                  ccLen = itoa(PALTFORM_VERSION, ccPtr);
+    287                  ccPtr += ccLen;
+   \                     ??CrossCallReturnLabel_32:
+   \   00003C   3A40....     MOV.W   #itoa, R10
+   \   000040   0B41         MOV.W   SP, R11
+   \   000042   3B52         ADD.W   #0x8, R11
+   \   000044   0D41         MOV.W   SP, R13
+   \   000046   3D52         ADD.W   #0x8, R13
+   \   000048   5C43         MOV.B   #0x1, R12
+   \   00004A   B012....     CALL    #?Subroutine16
+    288                  *ccPtr++ = '.';
+    289                  ccLen = itoa(APPLICATION_VERSION, ccPtr);
+    290                  ccPtr += ccLen;
+   \                     ??CrossCallReturnLabel_42:
+   \   00004E   7C400E00     MOV.B   #0xe, R12
+   \   000052   B012....     CALL    #?Subroutine16
+    291                  *ccPtr++ = '.';
+    292                  ccLen = itoa(SPI_VERSION_NUMBER, ccPtr);
+    293                  ccPtr += ccLen;
+   \                     ??CrossCallReturnLabel_43:
+   \   000056   7C400700     MOV.B   #0x7, R12
+   \   00005A   B012....     CALL    #?Subroutine16
+    294                  *ccPtr++ = '.';
+    295                  ccLen = itoa(DRIVER_VERSION_NUMBER, ccPtr);
+    296                  ccPtr += ccLen;
+   \                     ??CrossCallReturnLabel_44:
+   \   00005E   7C401000     MOV.B   #0x10, R12
+   \   000062   8A12         CALL    R10
+   \   000064   0B5C         ADD.W   R12, R11
+    297                  *ccPtr++ = '\f';
+   \   000066   FB400C000000 MOV.B   #0xc, 0(R11)
+   \   00006C   1B53         ADD.W   #0x1, R11
+    298                  *ccPtr++ = '\r';
+   \   00006E   FB400D000000 MOV.B   #0xd, 0(R11)
+   \   000074   1B53         ADD.W   #0x1, R11
+    299                  *ccPtr++ = '\0';
+   \   000076   CB430000     MOV.B   #0x0, 0(R11)
+    300              }
+    301          
+    302              ucStopSmartConfig   = 0;
+   \   00007A   C243....     MOV.B   #0x0, &ucStopSmartConfig
+    303              
+    304              initADC();
+   \   00007E   B012....     CALL    #initADC
+    305              configureTimerPWM(); 
+   \   000082   B012....     CALL    #configureTimerPWM
+    306              __delay_cycles(20000000); 
+   \   000086                ////////////// Start of 20000000 cycles delay.
+   \   000086   3F403E4B     MOV.W   #0x4b3e, R15
+   \   00008A   3B404C00     MOV.W   #0x4c, R11
+   \                     ??initDriver_0:
+   \   00008E   3F53         ADD.W   #0xffff, R15
+   \   000090   3B63         ADDC.W  #0xffff, R11
+   \   000092   FD2F         JC      ??initDriver_0
+   \   000094                ////////////// End of delay code.
+    307              configureWatchdog();
+   \   000094   B012....     CALL    #configureWatchdog
+    308              
+    309              return(0);
+   \   000098   0C43         MOV.W   #0x0, R12
+   \   00009A   31503A00     ADD.W   #0x3a, SP
+   \   00009E   ....         JMP     ??Subroutine1_0
+    310          }
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine16:
+   \   000000   8A12         CALL    R10
+   \   000002   0B5C         ADD.W   R12, R11
+   \   000004   FB402E000000 MOV.B   #0x2e, 0(R11)
+   \   00000A   1B53         ADD.W   #0x1, R11
+   \   00000C   0D4B         MOV.W   R11, R13
+   \   00000E   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine10:
+   \   000000   0C43         MOV.W   #0x0, R12
+   \   000002   B012....     CALL    #wlan_start
+   \   000006   3C404482     MOV.W   #0x8244, R12
+   \   00000A   0D43         MOV.W   #0x0, R13
+   \   00000C   3040....     BR      #wlan_set_event_mask
+    311          
+    312          //Connect to AP
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine8:
+   \   000000                ////////////// Start of 2000000 cycles delay.
+   \   000000   3F401EA1     MOV.W   #0xa11e, R15
+   \   000004   3E400700     MOV.W   #0x7, R14
+   \                     ??Subroutine8_0:
+   \   000008   3F53         ADD.W   #0xffff, R15
+   \   00000A   3E63         ADDC.W  #0xffff, R14
+   \   00000C   FD2F         JC      ??Subroutine8_0
+   \   00000E                ////////////// End of delay code.
+   \   00000E   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    313          void connectAP()
+   \                     connectAP:
+    314          {
+   \   000000   31801000     SUB.W   #0x10, SP
+    315              unsigned char pucIP_Addr[4];
+    316              unsigned char pucIP_DefaultGWAddr[4];
+    317              unsigned char pucSubnetMask[4];
+    318              unsigned char pucDNS[4];
+    319           
+    320              //wlan_connect(WLAN_SEC_WPA2, "JAZZTEL_88BE", strlen("JAZZTEL_88BE"), NULL, "A275388F6698AF92JE95", 20);
+    321              //wlan_connect(WLAN_SEC_UNSEC, "JAZZTEL_88BE",strlen("JAZZTEL_88BE") , NULL, NULL, 0);
+    322              wlan_connect("JAZZTEL_88BE", strlen("JAZZTEL_88BE"));
+   \   000004   3E400C00     MOV.W   #0xc, R14
+   \   000008   0F43         MOV.W   #0x0, R15
+   \   00000A   3C40....     MOV.W   #`?<Constant "JAZZTEL_88BE">`, R12
+   \   00000E   B012....     CALL    #wlan_connect
+    323              
+    324              // Configure DHCP               C0A80188
+    325              pucSubnetMask[0] = 0xFF;
+   \   000012   F1430400     MOV.B   #0xff, 0x4(SP)
+    326              pucSubnetMask[1] = 0xFF;
+   \   000016   F1430500     MOV.B   #0xff, 0x5(SP)
+    327              pucSubnetMask[2] = 0xFF;
+   \   00001A   F1430600     MOV.B   #0xff, 0x6(SP)
+    328              pucSubnetMask[3] = 0x0;
+   \   00001E   C1430700     MOV.B   #0x0, 0x7(SP)
+    329          
+    330              
+    331              pucIP_Addr[0] = 0xC0;
+   \   000022   B012....     CALL    #?Subroutine13
+    332              pucIP_Addr[1] = 0xA8;
+    333              pucIP_Addr[2] = 0x01;
+    334              pucIP_Addr[3] = 0x82;
+   \                     ??CrossCallReturnLabel_37:
+   \   000026   F14082000F00 MOV.B   #0x82, 0xf(SP)
+    335          
+    336              pucIP_DefaultGWAddr[0] = 0xC0;
+   \   00002C   F140C0000800 MOV.B   #0xc0, 0x8(SP)
+    337              pucIP_DefaultGWAddr[1] = 0xA8;
+   \   000032   F140A8000900 MOV.B   #0xa8, 0x9(SP)
+    338              pucIP_DefaultGWAddr[2] = 0x01;
+   \   000038   D1430A00     MOV.B   #0x1, 0xa(SP)
+    339              pucIP_DefaultGWAddr[3] = 0x01;
+   \   00003C   D1430B00     MOV.B   #0x1, 0xb(SP)
+    340          
+    341              pucDNS[0] = 0x0;
+   \   000040   C1430000     MOV.B   #0x0, 0(SP)
+    342              pucDNS[1] = 0x0;
+   \   000044   C1430100     MOV.B   #0x0, 0x1(SP)
+    343              pucDNS[2] = 0x0;
+   \   000048   C1430200     MOV.B   #0x0, 0x2(SP)
+    344              pucDNS[3] = 0x0;
+   \   00004C   C1430300     MOV.B   #0x0, 0x3(SP)
+    345          
+    346              
+    347              netapp_dhcp((unsigned long *)pucIP_Addr, (unsigned long *)pucSubnetMask, (unsigned long *)pucIP_DefaultGWAddr, (unsigned long *)pucDNS);
+   \   000050   0F41         MOV.W   SP, R15
+   \   000052   0E41         MOV.W   SP, R14
+   \   000054   3E52         ADD.W   #0x8, R14
+   \   000056   0D41         MOV.W   SP, R13
+   \   000058   2D52         ADD.W   #0x4, R13
+   \   00005A   0C41         MOV.W   SP, R12
+   \   00005C   3C500C00     ADD.W   #0xc, R12
+   \   000060   B012....     CALL    #netapp_dhcp
+    348                          
+    349              __delay_cycles(2000000);
+   \   000064   B012....     CALL    #?Subroutine8
+    350              
+    351          }
+   \                     ??CrossCallReturnLabel_28:
+   \   000068   31501000     ADD.W   #0x10, SP
+   \   00006C   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine13:
+   \   000000   F140C0000E00 MOV.B   #0xc0, 0xe(SP)
+   \   000006   F140A8000F00 MOV.B   #0xa8, 0xf(SP)
+   \   00000C   D1431000     MOV.B   #0x1, 0x10(SP)
+   \   000010   3041         RET
+    352          
+    353          //Close socket
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    354          void closeSocket()
+   \                     closeSocket:
+    355          {
+    356              closesocket( ulSocket );       
+   \   000000   B012....     CALL    #?Subroutine14
+   \                     ??CrossCallReturnLabel_40:
+   \   000004   B012....     CALL    #closesocket
+    357              ulSocket = 0xFFFFFFFF;    
+   \   000008   B243....     MOV.W   #0xffff, &ulSocket
+   \   00000C   B243....     MOV.W   #0xffff, &ulSocket + 2
+    358          }
+   \   000010   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine14:
+   \   000000   1C42....     MOV.W   &ulSocket, R12
+   \   000004   1D42....     MOV.W   &ulSocket + 2, R13
+   \   000008   3041         RET
+    359          
+    360          //Function send UDP message
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine21:
+   \   000000   B012....     CALL    #?Subroutine18
+   \                     ??CrossCallReturnLabel_62:
+   \   000004   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine6:
+   \   000000   2E43         MOV.W   #0x2, R14
+   \   000002   0F43         MOV.W   #0x0, R15
+   \   000004   2C43         MOV.W   #0x2, R12
+   \   000006   0D43         MOV.W   #0x0, R13
+   \   000008   3040....     BR      #socket
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    361          void sendMessage(char *datos)
+   \                     sendMessage:
+    362          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   31801000     SUB.W   #0x10, SP
+   \   000008   0B4C         MOV.W   R12, R11
+    363                  unsigned long longitud=strlen(datos);
+   \   00000A   B012....     CALL    #strlen
+   \   00000E   0A4C         MOV.W   R12, R10
+    364                  sockaddr tSocketAddr; 
+    365                  //Open UDP socket
+    366                  ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000010   0312         PUSH.W  #0x0
+   \   000012   30121100     PUSH.W  #0x11
+   \   000016   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_4:
+   \   00001A   B012....     CALL    #?Subroutine12
+    367                  
+    368                  // The family is AF_INET
+    369                  tSocketAddr.sa_family = AF_INET;  
+    370                  
+    371                  tSocketAddr.sa_data[0] = 0x11;
+    372                  tSocketAddr.sa_data[1] = 0x5C; 
+    373                  
+    374                  tSocketAddr.sa_data[2] = 0xC0;
+   \                     ??CrossCallReturnLabel_35:
+   \   00001E   ....         JMP     ?Subroutine1
+    375                  tSocketAddr.sa_data[3] = 0xA8;
+    376                  tSocketAddr.sa_data[4] = 0x01;
+    377                  tSocketAddr.sa_data[5] = 0x80;
+    378                          
+    379                  sendto(ulSocket, datos, longitud, 0, &tSocketAddr, sizeof(sockaddr)); 
+    380                  
+    381          }
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine12:
+   \   000000   B012....     CALL    #?Subroutine19
+   \                     ??CrossCallReturnLabel_49:
+   \   000004   F1405C000900 MOV.B   #0x5c, 0x9(SP)
+   \   00000A   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine19:
+   \   000000   B012....     CALL    #?Subroutine20
+   \                     ??CrossCallReturnLabel_51:
+   \   000004   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine20:
+   \   000000   824C....     MOV.W   R12, &ulSocket
+   \   000004   824D....     MOV.W   R13, &ulSocket + 2
+   \   000008   A1430A00     MOV.W   #0x2, 0xa(SP)
+   \   00000C   F14011000C00 MOV.B   #0x11, 0xc(SP)
+   \   000012   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine1:
+   \   000000   B012....     CALL    #?Subroutine21
+   \                     ??CrossCallReturnLabel_53:
+   \   000004   0312         PUSH.W  #0x0
+   \   000006   30121000     PUSH.W  #0x10
+   \   00000A   0312         PUSH.W  #0x0
+   \   00000C   0312         PUSH.W  #0x0
+   \   00000E   0312         PUSH.W  #0x0
+   \   000010   0A12         PUSH.W  R10
+   \   000012   0F41         MOV.W   SP, R15
+   \   000014   3F501000     ADD.W   #0x10, R15
+   \   000018   0E4B         MOV.W   R11, R14
+   \   00001A   B012....     CALL    #?Subroutine14
+   \                     ??CrossCallReturnLabel_41:
+   \   00001E   B012....     CALL    #sendto
+   \   000022   31502000     ADD.W   #0x20, SP
+   \   000026                REQUIRE ??Subroutine1_0
+   \   000026                // Fall through to label ??Subroutine1_0
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine18:
+   \   000000   F140C0000C00 MOV.B   #0xc0, 0xc(SP)
+   \   000006   F140A8000D00 MOV.B   #0xa8, 0xd(SP)
+   \   00000C   D1430E00     MOV.B   #0x1, 0xe(SP)
+   \   000010   F14080000F00 MOV.B   #0x80, 0xf(SP)
+   \   000016   3041         RET
+    382          
+    383          //Function send UDP message
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    384          void sendConsumptionMessage(unsigned char *consumptionData)
+   \                     sendConsumptionMessage:
+    385          {  
+   \   000000   0A12         PUSH.W  R10
+   \   000002   31801000     SUB.W   #0x10, SP
+   \   000006   0A4C         MOV.W   R12, R10
+    386                  __delay_cycles(2000000);
+   \   000008   B012....     CALL    #?Subroutine8
+    387                  if(flag_sendConsumption==1)
+   \                     ??CrossCallReturnLabel_27:
+   \   00000C   D293....     CMP.B   #0x1, &flag_sendConsumption
+   \   000010   1420         JNE     ??sendConsumptionMessage_0
+    388                  {       
+    389                    sockaddr tSocketAddr; 
+    390                    //Open UDP socket
+    391                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000012   0312         PUSH.W  #0x0
+   \   000014   30121100     PUSH.W  #0x11
+   \   000018   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_13:
+   \   00001C   B012....     CALL    #?Subroutine12
+    392                  
+    393                    // The family is AF_INET
+    394                    tSocketAddr.sa_family = AF_INET;  
+    395                  
+    396                    tSocketAddr.sa_data[0] = 0x11;          
+    397                    tSocketAddr.sa_data[1] = 0x5C;  
+    398                  
+    399                    tSocketAddr.sa_data[2] = 0xC0;
+   \                     ??CrossCallReturnLabel_34:
+   \   000020   B012....     CALL    #?Subroutine21
+    400                    tSocketAddr.sa_data[3] = 0xA8;
+    401                    tSocketAddr.sa_data[4] = 0x01;
+    402                    tSocketAddr.sa_data[5] = 0x80;
+    403                    
+    404                    sendto(ulSocket, consumptionData, 2, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_52:
+   \   000024   0312         PUSH.W  #0x0
+   \   000026   30121000     PUSH.W  #0x10
+   \   00002A   0312         PUSH.W  #0x0
+   \   00002C   0312         PUSH.W  #0x0
+   \   00002E   0312         PUSH.W  #0x0
+   \   000030   2312         PUSH.W  #0x2
+   \   000032   B012....     CALL    #?Subroutine7
+    405                  }
+   \                     ??CrossCallReturnLabel_24:
+   \   000036   31501000     ADD.W   #0x10, SP
+    406                  if(flag_sendConsumption==2)
+   \                     ??sendConsumptionMessage_0:
+   \   00003A   E293....     CMP.B   #0x2, &flag_sendConsumption
+   \   00003E   1220         JNE     ??sendConsumptionMessage_1
+    407                  {       
+    408                    sockaddr tSocketAddr; 
+    409                    //Open UDP socket
+    410                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000040   0312         PUSH.W  #0x0
+   \   000042   30121100     PUSH.W  #0x11
+   \   000046   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_12:
+   \   00004A   B012....     CALL    #?Subroutine11
+    411                  
+    412                    // The family is AF_INET
+    413                    tSocketAddr.sa_family = AF_INET;  
+    414                  
+    415                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    416                    tSocketAddr.sa_data[1] = 0x59;  //59
+    417                  
+    418                    tSocketAddr.sa_data[2] = 0xC0;
+    419                    tSocketAddr.sa_data[3] = 0xA8;
+    420                    tSocketAddr.sa_data[4] = 0x01;
+    421                    tSocketAddr.sa_data[5] = 0x80;
+    422                    
+    423                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_54:
+   \   00004E   0312         PUSH.W  #0x0
+   \   000050   30121000     PUSH.W  #0x10
+   \   000054   0312         PUSH.W  #0x0
+   \   000056   0312         PUSH.W  #0x0
+   \   000058   0312         PUSH.W  #0x0
+   \   00005A   1312         PUSH.W  #0x1
+   \   00005C   B012....     CALL    #?Subroutine7
+    424                  }
+   \                     ??CrossCallReturnLabel_23:
+   \   000060   31501000     ADD.W   #0x10, SP
+    425                  if(flag_sendConsumption==3)
+   \                     ??sendConsumptionMessage_1:
+   \   000064   F2900300.... CMP.B   #0x3, &flag_sendConsumption
+   \   00006A   1220         JNE     ??sendConsumptionMessage_2
+    426                  {        
+    427                    sockaddr tSocketAddr; 
+    428                    //Open UDP socket
+    429                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   00006C   0312         PUSH.W  #0x0
+   \   00006E   30121100     PUSH.W  #0x11
+   \   000072   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_11:
+   \   000076   B012....     CALL    #?Subroutine11
+    430                  
+    431                    // The family is AF_INET
+    432                    tSocketAddr.sa_family = AF_INET;  
+    433                  
+    434                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    435                    tSocketAddr.sa_data[1] = 0x59;  //59
+    436                  
+    437                    tSocketAddr.sa_data[2] = 0xC0;
+    438                    tSocketAddr.sa_data[3] = 0xA8;
+    439                    tSocketAddr.sa_data[4] = 0x01;
+    440                    tSocketAddr.sa_data[5] = 0x80;
+    441                    
+    442                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_55:
+   \   00007A   0312         PUSH.W  #0x0
+   \   00007C   30121000     PUSH.W  #0x10
+   \   000080   0312         PUSH.W  #0x0
+   \   000082   0312         PUSH.W  #0x0
+   \   000084   0312         PUSH.W  #0x0
+   \   000086   1312         PUSH.W  #0x1
+   \   000088   B012....     CALL    #?Subroutine7
+    443                  }
+   \                     ??CrossCallReturnLabel_22:
+   \   00008C   31501000     ADD.W   #0x10, SP
+    444                  if(flag_sendConsumption==4)
+   \                     ??sendConsumptionMessage_2:
+   \   000090   E292....     CMP.B   #0x4, &flag_sendConsumption
+   \   000094   1220         JNE     ??sendConsumptionMessage_3
+    445                  {        
+    446                    sockaddr tSocketAddr; 
+    447                    //Open UDP socket
+    448                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000096   0312         PUSH.W  #0x0
+   \   000098   30121100     PUSH.W  #0x11
+   \   00009C   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_10:
+   \   0000A0   B012....     CALL    #?Subroutine11
+    449                  
+    450                    // The family is AF_INET
+    451                    tSocketAddr.sa_family = AF_INET;  
+    452                  
+    453                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    454                    tSocketAddr.sa_data[1] = 0x59;  //59
+    455                  
+    456                    tSocketAddr.sa_data[2] = 0xC0;
+    457                    tSocketAddr.sa_data[3] = 0xA8;
+    458                    tSocketAddr.sa_data[4] = 0x01;
+    459                    tSocketAddr.sa_data[5] = 0x80;
+    460                    
+    461                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_56:
+   \   0000A4   0312         PUSH.W  #0x0
+   \   0000A6   30121000     PUSH.W  #0x10
+   \   0000AA   0312         PUSH.W  #0x0
+   \   0000AC   0312         PUSH.W  #0x0
+   \   0000AE   0312         PUSH.W  #0x0
+   \   0000B0   1312         PUSH.W  #0x1
+   \   0000B2   B012....     CALL    #?Subroutine7
+    462                  }
+   \                     ??CrossCallReturnLabel_21:
+   \   0000B6   31501000     ADD.W   #0x10, SP
+    463                  if(flag_sendConsumption==5)
+   \                     ??sendConsumptionMessage_3:
+   \   0000BA   F2900500.... CMP.B   #0x5, &flag_sendConsumption
+   \   0000C0   1220         JNE     ??sendConsumptionMessage_4
+    464                  {     
+    465                    sockaddr tSocketAddr; 
+    466                    //Open UDP socket
+    467                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   0000C2   0312         PUSH.W  #0x0
+   \   0000C4   30121100     PUSH.W  #0x11
+   \   0000C8   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_9:
+   \   0000CC   B012....     CALL    #?Subroutine11
+    468                  
+    469                    // The family is AF_INET
+    470                    tSocketAddr.sa_family = AF_INET;  
+    471                  
+    472                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    473                    tSocketAddr.sa_data[1] = 0x59;  //59
+    474                  
+    475                    tSocketAddr.sa_data[2] = 0xC0;
+    476                    tSocketAddr.sa_data[3] = 0xA8;
+    477                    tSocketAddr.sa_data[4] = 0x01;
+    478                    tSocketAddr.sa_data[5] = 0x80;
+    479                    
+    480                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_57:
+   \   0000D0   0312         PUSH.W  #0x0
+   \   0000D2   30121000     PUSH.W  #0x10
+   \   0000D6   0312         PUSH.W  #0x0
+   \   0000D8   0312         PUSH.W  #0x0
+   \   0000DA   0312         PUSH.W  #0x0
+   \   0000DC   1312         PUSH.W  #0x1
+   \   0000DE   B012....     CALL    #?Subroutine7
+    481                  }
+   \                     ??CrossCallReturnLabel_20:
+   \   0000E2   31501000     ADD.W   #0x10, SP
+    482                  if(flag_sendConsumption==6)
+   \                     ??sendConsumptionMessage_4:
+   \   0000E6   F2900600.... CMP.B   #0x6, &flag_sendConsumption
+   \   0000EC   1220         JNE     ??sendConsumptionMessage_5
+    483                  {        
+    484                    sockaddr tSocketAddr; 
+    485                    //Open UDP socket
+    486                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   0000EE   0312         PUSH.W  #0x0
+   \   0000F0   30121100     PUSH.W  #0x11
+   \   0000F4   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_8:
+   \   0000F8   B012....     CALL    #?Subroutine11
+    487                  
+    488                    // The family is AF_INET
+    489                    tSocketAddr.sa_family = AF_INET;  
+    490                  
+    491                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    492                    tSocketAddr.sa_data[1] = 0x59;  //59
+    493                  
+    494                    tSocketAddr.sa_data[2] = 0xC0;
+    495                    tSocketAddr.sa_data[3] = 0xA8;
+    496                    tSocketAddr.sa_data[4] = 0x01;
+    497                    tSocketAddr.sa_data[5] = 0x80;
+    498                    
+    499                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_58:
+   \   0000FC   0312         PUSH.W  #0x0
+   \   0000FE   30121000     PUSH.W  #0x10
+   \   000102   0312         PUSH.W  #0x0
+   \   000104   0312         PUSH.W  #0x0
+   \   000106   0312         PUSH.W  #0x0
+   \   000108   1312         PUSH.W  #0x1
+   \   00010A   B012....     CALL    #?Subroutine7
+    500                  }
+   \                     ??CrossCallReturnLabel_19:
+   \   00010E   31501000     ADD.W   #0x10, SP
+    501                  if(flag_sendConsumption==7)
+   \                     ??sendConsumptionMessage_5:
+   \   000112   F2900700.... CMP.B   #0x7, &flag_sendConsumption
+   \   000118   1220         JNE     ??sendConsumptionMessage_6
+    502                  {        
+    503                    sockaddr tSocketAddr; 
+    504                    //Open UDP socket
+    505                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   00011A   0312         PUSH.W  #0x0
+   \   00011C   30121100     PUSH.W  #0x11
+   \   000120   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_7:
+   \   000124   B012....     CALL    #?Subroutine11
+    506                  
+    507                    // The family is AF_INET
+    508                    tSocketAddr.sa_family = AF_INET;  
+    509                  
+    510                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    511                    tSocketAddr.sa_data[1] = 0x59;  //59
+    512                  
+    513                    tSocketAddr.sa_data[2] = 0xC0;
+    514                    tSocketAddr.sa_data[3] = 0xA8;
+    515                    tSocketAddr.sa_data[4] = 0x01;
+    516                    tSocketAddr.sa_data[5] = 0x80;
+    517                    
+    518                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_59:
+   \   000128   0312         PUSH.W  #0x0
+   \   00012A   30121000     PUSH.W  #0x10
+   \   00012E   0312         PUSH.W  #0x0
+   \   000130   0312         PUSH.W  #0x0
+   \   000132   0312         PUSH.W  #0x0
+   \   000134   1312         PUSH.W  #0x1
+   \   000136   B012....     CALL    #?Subroutine7
+    519                  }
+   \                     ??CrossCallReturnLabel_18:
+   \   00013A   31501000     ADD.W   #0x10, SP
+    520                  if(flag_sendConsumption==8)
+   \                     ??sendConsumptionMessage_6:
+   \   00013E   F292....     CMP.B   #0x8, &flag_sendConsumption
+   \   000142   1220         JNE     ??sendConsumptionMessage_7
+    521                  {        
+    522                    sockaddr tSocketAddr; 
+    523                    //Open UDP socket
+    524                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000144   0312         PUSH.W  #0x0
+   \   000146   30121100     PUSH.W  #0x11
+   \   00014A   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_6:
+   \   00014E   B012....     CALL    #?Subroutine11
+    525                  
+    526                    // The family is AF_INET
+    527                    tSocketAddr.sa_family = AF_INET;  
+    528                  
+    529                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    530                    tSocketAddr.sa_data[1] = 0x59;  //59
+    531                  
+    532                    tSocketAddr.sa_data[2] = 0xC0;
+    533                    tSocketAddr.sa_data[3] = 0xA8;
+    534                    tSocketAddr.sa_data[4] = 0x01;
+    535                    tSocketAddr.sa_data[5] = 0x80;
+    536                    
+    537                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_60:
+   \   000152   0312         PUSH.W  #0x0
+   \   000154   30121000     PUSH.W  #0x10
+   \   000158   0312         PUSH.W  #0x0
+   \   00015A   0312         PUSH.W  #0x0
+   \   00015C   0312         PUSH.W  #0x0
+   \   00015E   1312         PUSH.W  #0x1
+   \   000160   B012....     CALL    #?Subroutine7
+    538                  }  
+   \                     ??CrossCallReturnLabel_17:
+   \   000164   31501000     ADD.W   #0x10, SP
+    539                  
+    540                  if(flag_sendConsumption==9)
+   \                     ??sendConsumptionMessage_7:
+   \   000168   F2900900.... CMP.B   #0x9, &flag_sendConsumption
+   \   00016E   1220         JNE     ??sendConsumptionMessage_8
+    541                  {        
+    542                    sockaddr tSocketAddr; 
+    543                    //Open UDP socket
+    544                    ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000170   0312         PUSH.W  #0x0
+   \   000172   30121100     PUSH.W  #0x11
+   \   000176   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_5:
+   \   00017A   B012....     CALL    #?Subroutine11
+    545                  
+    546                    // The family is AF_INET
+    547                    tSocketAddr.sa_family = AF_INET;  
+    548                  
+    549                    tSocketAddr.sa_data[0] = 0x11;  //11            4441
+    550                    tSocketAddr.sa_data[1] = 0x59;  //59
+    551                  
+    552                    tSocketAddr.sa_data[2] = 0xC0;
+    553                    tSocketAddr.sa_data[3] = 0xA8;
+    554                    tSocketAddr.sa_data[4] = 0x01;
+    555                    tSocketAddr.sa_data[5] = 0x80;
+    556                    
+    557                    sendto(ulSocket, consumptionData, 1, 0, &tSocketAddr, sizeof(sockaddr));
+   \                     ??CrossCallReturnLabel_61:
+   \   00017E   0312         PUSH.W  #0x0
+   \   000180   30121000     PUSH.W  #0x10
+   \   000184   0312         PUSH.W  #0x0
+   \   000186   0312         PUSH.W  #0x0
+   \   000188   0312         PUSH.W  #0x0
+   \   00018A   1312         PUSH.W  #0x1
+   \   00018C   B012....     CALL    #?Subroutine7
+    558                  }
+   \                     ??CrossCallReturnLabel_16:
+   \   000190   31501000     ADD.W   #0x10, SP
+    559          }
+   \                     ??sendConsumptionMessage_8:
+   \   000194   31501000     ADD.W   #0x10, SP
+   \   000198   3A41         POP.W   R10
+   \   00019A   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine11:
+   \   000000   B012....     CALL    #?Subroutine19
+   \                     ??CrossCallReturnLabel_48:
+   \   000004   F14059000900 MOV.B   #0x59, 0x9(SP)
+   \   00000A                REQUIRE ?Subroutine21
+   \   00000A                // Fall through to label ?Subroutine21
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine7:
+   \   000000   0F41         MOV.W   SP, R15
+   \   000002   3F501200     ADD.W   #0x12, R15
+   \   000006   0E4A         MOV.W   R10, R14
+   \   000008   1C42....     MOV.W   &ulSocket, R12
+   \   00000C   1D42....     MOV.W   &ulSocket + 2, R13
+   \   000010   3040....     BR      #sendto
+    560          
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    561          void sendPowerMeas()
+   \                     sendPowerMeas:
+    562          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+   \   000008   3182         SUB.W   #0x8, SP
+    563                  IE1 &= ~(WDTIE);
+   \   00000A   D2C30000     BIC.B   #0x1, &0x0
+    564                  unsigned char x1 = (powerSummation>>56)&(0xFF);
+   \   00000E   3F40....     MOV.W   #powerSummation, R15
+   \   000012   3C4F         MOV.W   @R15+, R12
+   \   000014   3D4F         MOV.W   @R15+, R13
+   \   000016   3E4F         MOV.W   @R15+, R14
+   \   000018   3F4F         MOV.W   @R15+, R15
+   \   00001A   0B4F         MOV.W   R15, R11
+   \   00001C   8B10         SWPB    R11
+   \   00001E   C14B0700     MOV.B   R11, 0x7(SP)
+    565                  unsigned char x2 = (powerSummation>>48)&(0xFF);
+   \   000022   C14F0600     MOV.B   R15, 0x6(SP)
+    566                  unsigned char x3 = (powerSummation>>40)&(0xFF);
+   \   000026   084E         MOV.W   R14, R8
+   \   000028   0B4F         MOV.W   R15, R11
+   \   00002A   8B10         SWPB    R11
+   \   00002C   8810         SWPB    R8
+   \   00002E   48EB         XOR.B   R11, R8
+   \   000030   48EB         XOR.B   R11, R8
+   \   000032   C1480500     MOV.B   R8, 0x5(SP)
+    567                  unsigned char x4 = (powerSummation>>32)&(0xFF);
+   \   000036   C14E0400     MOV.B   R14, 0x4(SP)
+    568                  unsigned char x5 = (powerSummation>>24)&(0xFF);
+   \   00003A   0A4D         MOV.W   R13, R10
+   \   00003C   8A10         SWPB    R10
+   \   00003E   C14A0300     MOV.B   R10, 0x3(SP)
+    569                  unsigned char x6 = (powerSummation>>16)&(0xFF);
+   \   000042   C14D0200     MOV.B   R13, 0x2(SP)
+    570                  unsigned char x7 = (powerSummation>>8)&(0xFF); 
+   \   000046   0B4C         MOV.W   R12, R11
+   \   000048   8B10         SWPB    R11
+   \   00004A   C14B0100     MOV.B   R11, 0x1(SP)
+    571                  unsigned char x8 = (powerSummation>>0)&(0xFF); 
+   \   00004E   C14C0000     MOV.B   R12, 0(SP)
+    572                  
+    573                  unsigned char *consumptionData;
+    574            
+    575                  flag_sendConsumption=1;
+   \   000052   D243....     MOV.B   #0x1, &flag_sendConsumption
+    576                  consumptionData="1:";
+    577                  sendConsumptionMessage(consumptionData);
+   \   000056   3B40....     MOV.W   #sendConsumptionMessage, R11
+   \   00005A   3C40....     MOV.W   #`?<Constant "1:">`, R12
+   \   00005E   8B12         CALL    R11
+    578                  closeSocket();
+   \   000060   3A40....     MOV.W   #closeSocket, R10
+   \   000064   8A12         CALL    R10
+    579                  flag_sendConsumption=2;
+   \   000066   E243....     MOV.B   #0x2, &flag_sendConsumption
+    580                  consumptionData=&x1;
+    581                  sendConsumptionMessage(consumptionData);
+   \   00006A   0C41         MOV.W   SP, R12
+   \   00006C   3C500700     ADD.W   #0x7, R12
+   \   000070   8B12         CALL    R11
+    582                  closeSocket();
+   \   000072   8A12         CALL    R10
+    583                  flag_sendConsumption=3;
+   \   000074   F2400300.... MOV.B   #0x3, &flag_sendConsumption
+    584                  consumptionData=&x2;
+    585                  sendConsumptionMessage(consumptionData);  
+   \   00007A   0C41         MOV.W   SP, R12
+   \   00007C   3C500600     ADD.W   #0x6, R12
+   \   000080   8B12         CALL    R11
+    586                  closeSocket();
+   \   000082   8A12         CALL    R10
+    587                  flag_sendConsumption=4;
+   \   000084   E242....     MOV.B   #0x4, &flag_sendConsumption
+    588                  consumptionData=&x3;
+    589                  sendConsumptionMessage(consumptionData);
+   \   000088   0C41         MOV.W   SP, R12
+   \   00008A   3C500500     ADD.W   #0x5, R12
+   \   00008E   8B12         CALL    R11
+    590                  closeSocket();
+   \   000090   8A12         CALL    R10
+    591                  flag_sendConsumption=5;
+   \   000092   F2400500.... MOV.B   #0x5, &flag_sendConsumption
+    592                  consumptionData=&x4;
+    593                  sendConsumptionMessage(consumptionData);
+   \   000098   0C41         MOV.W   SP, R12
+   \   00009A   2C52         ADD.W   #0x4, R12
+   \   00009C   8B12         CALL    R11
+    594                  closeSocket();
+   \   00009E   8A12         CALL    R10
+    595                  flag_sendConsumption=6;
+   \   0000A0   F2400600.... MOV.B   #0x6, &flag_sendConsumption
+    596                  consumptionData=&x5;
+    597                  sendConsumptionMessage(consumptionData); 
+   \   0000A6   0C41         MOV.W   SP, R12
+   \   0000A8   3C500300     ADD.W   #0x3, R12
+   \   0000AC   8B12         CALL    R11
+    598                  closeSocket();
+   \   0000AE   8A12         CALL    R10
+    599                  flag_sendConsumption=7;
+   \   0000B0   F2400700.... MOV.B   #0x7, &flag_sendConsumption
+    600                  consumptionData=&x6;
+    601                  sendConsumptionMessage(consumptionData);
+   \   0000B6   0C41         MOV.W   SP, R12
+   \   0000B8   2C53         ADD.W   #0x2, R12
+   \   0000BA   8B12         CALL    R11
+    602                  closeSocket();
+   \   0000BC   8A12         CALL    R10
+    603                  flag_sendConsumption=8;
+   \   0000BE   F242....     MOV.B   #0x8, &flag_sendConsumption
+    604                  consumptionData=&x7;
+    605                  sendConsumptionMessage(consumptionData);
+   \   0000C2   0C41         MOV.W   SP, R12
+   \   0000C4   1C53         ADD.W   #0x1, R12
+   \   0000C6   8B12         CALL    R11
+    606                  closeSocket();
+   \   0000C8   8A12         CALL    R10
+    607                  flag_sendConsumption=9;
+   \   0000CA   F2400900.... MOV.B   #0x9, &flag_sendConsumption
+    608                  consumptionData=&x8;
+    609                  sendConsumptionMessage(consumptionData);
+   \   0000D0   0C41         MOV.W   SP, R12
+   \   0000D2   8B12         CALL    R11
+    610                  closeSocket();
+   \   0000D4   8A12         CALL    R10
+    611                  
+    612                  IE1 |= WDTIE;  
+   \   0000D6   D2D30000     BIS.B   #0x1, &0x0
+    613          }
+   \   0000DA   3152         ADD.W   #0x8, SP
+   \   0000DC   3040....     BR      #?Epilogue4
+   \   0000E0                REQUIRE IE1
+    614          
+    615          //Function send UDP message
+
+   \                                 In  segment CODE, align 2, keep-with-next
+    616          void sendMessageSmartConfig(char *datos)
+   \                     sendMessageSmartConfig:
+    617          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   31801000     SUB.W   #0x10, SP
+   \   000008   0B4C         MOV.W   R12, R11
+    618                  unsigned long longitud=strlen(datos);
+   \   00000A   B012....     CALL    #strlen
+   \   00000E   0A4C         MOV.W   R12, R10
+    619                  sockaddr tSocketAddr; 
+    620                  //Open UDP socket
+    621                  ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000010   0312         PUSH.W  #0x0
+   \   000012   30121100     PUSH.W  #0x11
+   \   000016   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_14:
+   \   00001A   824C....     MOV.W   R12, &ulSocket
+   \   00001E   824D....     MOV.W   R13, &ulSocket + 2
+    622                  
+    623                  // The family is AF_INET
+    624                  tSocketAddr.sa_family = AF_INET;  
+   \   000022   A1430400     MOV.W   #0x2, 0x4(SP)
+    625                  
+    626                  tSocketAddr.sa_data[0] = 0x11;
+   \   000026   F14011000600 MOV.B   #0x11, 0x6(SP)
+    627                  tSocketAddr.sa_data[1] = 0x5E; 
+   \   00002C   F1405E000700 MOV.B   #0x5e, 0x7(SP)
+    628                  
+    629                  tSocketAddr.sa_data[2] = 0xC0;
+   \   000032   3040....     BR      #?Subroutine1
+    630                  tSocketAddr.sa_data[3] = 0xA8;
+    631                  tSocketAddr.sa_data[4] = 0x01;
+    632                  tSocketAddr.sa_data[5] = 0x80;
+    633                          
+    634                  sendto(ulSocket, datos, longitud, 0, &tSocketAddr, sizeof(sockaddr)); 
+    635          }
+    636          
+    637          //Function receive UDP message
+
+   \                                 In  segment CODE, align 2
+    638          void receiveMessage()
+   \                     receiveMessage:
+    639          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   31801400     SUB.W   #0x14, SP
+    640                  sockaddr tSocketAddr;
+    641                  socklen_t tRxPacketLength;  
+    642                  //Open UDP socket
+    643                  
+    644                  ulSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   \   000006   0312         PUSH.W  #0x0
+   \   000008   30121100     PUSH.W  #0x11
+   \   00000C   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_15:
+   \   000010   B012....     CALL    #?Subroutine20
+    645                     
+    646                  // The family is AF_INET
+    647                  tSocketAddr.sa_family = AF_INET;  
+    648                  
+    649                  tSocketAddr.sa_data[0] = 0x11;
+    650                  tSocketAddr.sa_data[1] = 0x5C; 
+   \                     ??CrossCallReturnLabel_50:
+   \   000014   F1405C000B00 MOV.B   #0x5c, 0xb(SP)
+    651           
+    652                  tSocketAddr.sa_data[2] = 0xC0;
+   \   00001A   B012....     CALL    #?Subroutine13
+    653                  tSocketAddr.sa_data[3] = 0xA8;
+    654                  tSocketAddr.sa_data[4] = 0x01;
+    655                  tSocketAddr.sa_data[5] = 0x80;
+   \                     ??CrossCallReturnLabel_36:
+   \   00001E   F14080000F00 MOV.B   #0x80, 0xf(SP)
+    656                  memset (&tSocketAddr.sa_data[2], 0, 4);  
+   \   000024   0A41         MOV.W   SP, R10
+   \   000026   3A52         ADD.W   #0x8, R10
+   \   000028   2E42         MOV.W   #0x4, R14
+   \   00002A   0D43         MOV.W   #0x0, R13
+   \   00002C   0C4A         MOV.W   R10, R12
+   \   00002E   2C52         ADD.W   #0x4, R12
+   \   000030   B012....     CALL    #memset
+    657                  bind(ulSocket, &tSocketAddr, sizeof(sockaddr));   
+   \   000034   0312         PUSH.W  #0x0
+   \   000036   30121000     PUSH.W  #0x10
+   \   00003A   0E4A         MOV.W   R10, R14
+   \   00003C   B012....     CALL    #?Subroutine14
+   \                     ??CrossCallReturnLabel_38:
+   \   000040   B012....     CALL    #bind
+    658                  
+    659                  recvfrom(ulSocket, pucCC3000_Rx_Buffer, CC3000_APP_BUFFER_SIZE, 0, &tSocketAddr, &tRxPacketLength); 
+   \   000044   0F41         MOV.W   SP, R15
+   \   000046   3F52         ADD.W   #0x8, R15
+   \   000048   0F12         PUSH.W  R15
+   \   00004A   0312         PUSH.W  #0x0
+   \   00004C   0312         PUSH.W  #0x0
+   \   00004E   0312         PUSH.W  #0x0
+   \   000050   2312         PUSH.W  #0x2
+   \   000052   0F4A         MOV.W   R10, R15
+   \   000054   3E40....     MOV.W   #pucCC3000_Rx_Buffer, R14
+   \   000058   B012....     CALL    #?Subroutine14
+   \                     ??CrossCallReturnLabel_39:
+   \   00005C   B012....     CALL    #recvfrom
+    660          }
+   \   000060   31502600     ADD.W   #0x26, SP
+   \   000064   3A41         POP.W   R10
+   \   000066   3041         RET
+    661          
+
+   \                                 In  segment CODE, align 2
+    662          void checkMessage()
+   \                     checkMessage:
+    663          {           
+    664            switch (((char)pucCC3000_Rx_Buffer[0])) {
+   \   000000   5E42....     MOV.B   &pucCC3000_Rx_Buffer, R14
+   \   000004   7E803000     SUB.B   #0x30, R14
+   \   000008   0B24         JEQ     ??checkMessage_0
+   \   00000A   5E83         SUB.B   #0x1, R14
+   \   00000C   0E24         JEQ     ??checkMessage_1
+   \   00000E   5E83         SUB.B   #0x1, R14
+   \   000010   1124         JEQ     ??checkMessage_2
+   \   000012   5E83         SUB.B   #0x1, R14
+   \   000014   1624         JEQ     ??checkMessage_3
+   \   000016   5E83         SUB.B   #0x1, R14
+   \   000018   2B24         JEQ     ??checkMessage_4
+   \   00001A   5E83         SUB.B   #0x1, R14
+   \   00001C   6724         JEQ     ??checkMessage_5
+   \   00001E   3041         RET
+    665              
+    666                  //START CHARGE
+    667                  case 0x30:               
+    668                    startCharge();     
+   \                     ??checkMessage_0:
+   \   000020   B012....     CALL    #startCharge
+    669                    flag_EnableCharge=1;        
+   \   000024   D243....     MOV.B   #0x1, &flag_EnableCharge
+    670                    
+    671                    break;
+   \   000028   3041         RET
+    672                    
+    673                  //STOP CHARGE    
+    674                  case 0x31:    
+    675                    stopCharge();
+   \                     ??checkMessage_1:
+   \   00002A   B012....     CALL    #stopCharge
+    676                    flag_EnableCharge=0;
+   \   00002E   C243....     MOV.B   #0x0, &flag_EnableCharge
+    677                    
+    678                    break;   
+   \   000032   3041         RET
+    679                    
+    680                  //SEND POWER MEASUREMENT   
+    681                  case 0x32:    
+    682                    sendPowerMeas();
+   \                     ??checkMessage_2:
+   \   000034   B012....     CALL    #sendPowerMeas
+    683                    closeSocket();
+   \   000038   B012....     CALL    #closeSocket
+    684                    flag_SendData=0;
+   \   00003C   C243....     MOV.B   #0x0, &flag_SendData
+    685                    break;  
+   \   000040   3041         RET
+    686                    
+    687                  //CAR STATUS   
+    688                  case 0x33:            
+    689                    switch (status) {
+   \                     ??checkMessage_3:
+   \   000042   5E42....     MOV.B   &status, R14
+   \   000046   4E83         SUB.B   #0x0, R14
+   \   000048   0524         JEQ     ??checkMessage_6
+   \   00004A   5E83         SUB.B   #0x1, R14
+   \   00004C   0724         JEQ     ??checkMessage_7
+   \   00004E   5E83         SUB.B   #0x1, R14
+   \   000050   0924         JEQ     ??checkMessage_8
+   \   000052   0B3C         JMP     ??checkMessage_9
+    690                      //CAR NOT CONNECTED
+    691                    case 0:  
+    692                      datos="0:NOT";
+   \                     ??checkMessage_6:
+   \   000054   B240........ MOV.W   #`?<Constant "0:NOT">`, &datos
+    693                      break;
+   \   00005A   073C         JMP     ??checkMessage_9
+    694                      //CAR CONNECTED 
+    695                    case 1:  
+    696                      datos="0:YES";
+   \                     ??checkMessage_7:
+   \   00005C   B240........ MOV.W   #`?<Constant "0:YES">`, &datos
+    697                      break;      
+   \   000062   033C         JMP     ??checkMessage_9
+    698                      //CAR READY TO CAHRGE
+    699                    case 2:   
+    700                      datos="0:READY";
+   \                     ??checkMessage_8:
+   \   000064   B240........ MOV.W   #`?<Constant "0:READY">`, &datos
+    701                      break; 
+    702                    default:
+    703                      break;
+    704                    } 
+    705                    flag_SendData = 1;
+   \                     ??checkMessage_9:
+   \   00006A   D243....     MOV.B   #0x1, &flag_SendData
+    706                    
+    707                    break; 
+   \   00006E   3041         RET
+    708                    
+    709                  //CHANGE PWM   
+    710                  case 0x34:  
+    711               
+    712                    /*DT <8%  		        carga no permitida
+    713                    10% < DT <  85%		(%DT) x 0.6 A
+    714                    85% < DT <  96%		Corriente disponible = (%DT-64) x 2.5 A
+    715                    96% < DT <  97% 	        80A
+    716                    97% > 			carga no permitida*/
+    717                    
+    718                    switch (((char)pucCC3000_Rx_Buffer[1])) {     
+   \                     ??checkMessage_4:
+   \   000070   5E42....     MOV.B   &pucCC3000_Rx_Buffer + 1, R14
+   \   000074   8E11         SXT     R14
+   \   000076   3E803000     SUB.W   #0x30, R14
+   \   00007A   4038         JL      ??checkMessage_10
+   \   00007C   3E900A00     CMP.W   #0xa, R14
+   \   000080   3D2C         JC      ??checkMessage_10
+   \   000082   0E5E         ADD.W   R14, R14
+   \   000084   104E....     BR      `?<Jumptable for checkMessage>_0`(R14)
+   \                     `?<Jumptable for checkMessage>_0`:
+   \   000088   ....         DC16    ??checkMessage_11
+   \   00008A   ....         DC16    ??checkMessage_12
+   \   00008C   ....         DC16    ??checkMessage_13
+   \   00008E   ....         DC16    ??checkMessage_14
+   \   000090   ....         DC16    ??checkMessage_15
+   \   000092   ....         DC16    ??checkMessage_16
+   \   000094   ....         DC16    ??checkMessage_17
+   \   000096   ....         DC16    ??checkMessage_18
+   \   000098   ....         DC16    ??checkMessage_19
+   \   00009A   ....         DC16    ??checkMessage_20
+    719                    case 0x31:   
+    720                    TA0CCR1 = 8000*(0.1);                                 
+   \                     ??checkMessage_12:
+   \   00009C   B24020037401 MOV.W   #0x320, &0x174
+    721                    break;
+   \   0000A2   3041         RET
+    722                    case 0x32:   
+    723                    TA0CCR1 = 8000*(0.2);                                  
+   \                     ??checkMessage_13:
+   \   0000A4   B24040067401 MOV.W   #0x640, &0x174
+    724                    break;
+   \   0000AA   3041         RET
+    725                    case 0x33:   
+    726                    TA0CCR1 = 8000*(0.3);                                   
+   \                     ??checkMessage_14:
+   \   0000AC   B24060097401 MOV.W   #0x960, &0x174
+    727                    break;
+   \   0000B2   3041         RET
+    728                    case 0x34:   
+    729                    TA0CCR1 = 8000*(0.4);                                
+   \                     ??checkMessage_15:
+   \   0000B4   B240800C7401 MOV.W   #0xc80, &0x174
+    730                    break;
+   \   0000BA   3041         RET
+    731                    case 0x35:   
+    732                    TA0CCR1 = 8000*(0.5);                                      
+   \                     ??checkMessage_16:
+   \   0000BC   B240A00F7401 MOV.W   #0xfa0, &0x174
+    733                    break;
+   \   0000C2   3041         RET
+    734                    case 0x36:   
+    735                    TA0CCR1 = 8000*(0.6);                                     
+   \                     ??checkMessage_17:
+   \   0000C4   B240C0127401 MOV.W   #0x12c0, &0x174
+    736                    break;
+   \   0000CA   3041         RET
+    737                    case 0x37:   
+    738                    TA0CCR1 = 8000*(0.7);                                 
+   \                     ??checkMessage_18:
+   \   0000CC   B240E0157401 MOV.W   #0x15e0, &0x174
+    739                    break;
+   \   0000D2   3041         RET
+    740                    case 0x38:   
+    741                    TA0CCR1 = 8000*(0.8);                                   
+   \                     ??checkMessage_19:
+   \   0000D4   B24000197401 MOV.W   #0x1900, &0x174
+    742                    break;
+   \   0000DA   3041         RET
+    743                    case 0x39:   
+    744                    TA0CCR1 = 8000*(0.9);                                      
+   \                     ??checkMessage_20:
+   \   0000DC   B240201C7401 MOV.W   #0x1c20, &0x174
+    745                    break;
+   \   0000E2   3041         RET
+    746                    case 0x30:   
+    747                    TA0CCR1 = 8000*(1);                                      
+   \                     ??checkMessage_11:
+   \   0000E4   B240401F7401 MOV.W   #0x1f40, &0x174
+    748                    break;
+   \   0000EA   3041         RET
+    749                      default:
+    750                      break;
+    751                    }
+    752                    
+    753                    /*switch (((char)pucCC3000_Rx_Buffer[2])) {  
+    754                    
+    755                    case 0x31:   
+    756                    TA0CCR1 = TA0CCR1 + (8000*(0.01));                                 
+    757                    break;
+    758                    case 0x32:   
+    759                    TA0CCR1 = TA0CCR1 + (8000*(0.02));                                  
+    760                    break;
+    761                    case 0x33:   
+    762                    TA0CCR1 = TA0CCR1 + (8000*(0.03));                                   
+    763                    break;
+    764                    case 0x34:   
+    765                    TA0CCR1 = TA0CCR1 + (8000*(0.04));                                
+    766                    break;
+    767                    case 0x35:   
+    768                    TA0CCR1 = TA0CCR1 + (8000*(0.05));                                      
+    769                    break;
+    770                    case 0x36:   
+    771                    TA0CCR1 = TA0CCR1 + (8000*(0.06));                                     
+    772                    break;
+    773                    case 0x37:   
+    774                    TA0CCR1 = TA0CCR1 + (8000*(0.07));                                 
+    775                    break;
+    776                    case 0x38:   
+    777                    TA0CCR1 = TA0CCR1 + (8000*(0.08));                                   
+    778                    break;
+    779                    case 0x39:   
+    780                    TA0CCR1 = TA0CCR1 + (8000*(0.09));                                      
+    781                    break;
+    782                      default:
+    783                      break;
+    784                    }*/
+    785                    
+    786                    break;
+    787                  //RESTART CONSUMPTION MEAS  
+    788                  case 0x35:  
+    789                    powerSummation=0;      
+   \                     ??checkMessage_5:
+   \   0000EC   8243....     MOV.W   #0x0, &powerSummation
+   \   0000F0   8243....     MOV.W   #0x0, &powerSummation + 2
+   \   0000F4   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   0000F8   8243....     MOV.W   #0x0, &powerSummation + 6
+    790                    
+    791                    break;
+    792            default:
+    793              break;
+    794            }
+    795          }
+   \                     ??checkMessage_10:
+   \   0000FC   3041         RET
+   \   0000FE                REQUIRE TACCR1
+    796          
+    797          //!  @brief  The function triggers a smart configuration process on CC3000.
+    798          //!			it exists upon completion of the process
+    799          
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine3:
+   \   000000                ////////////// Start of 20000000 cycles delay.
+   \   000000   3F403E4B     MOV.W   #0x4b3e, R15
+   \   000004   3E404C00     MOV.W   #0x4c, R14
+   \                     ??Subroutine3_0:
+   \   000008   3F53         ADD.W   #0xffff, R15
+   \   00000A   3E63         ADDC.W  #0xffff, R14
+   \   00000C   FD2F         JC      ??Subroutine3_0
+   \   00000E                ////////////// End of delay code.
+   \   00000E   3041         RET
+
+   \                                 In  segment CODE, align 2
+    800          void StartSmartConfig(void)
+   \                     StartSmartConfig:
+    801          {
+    802              stopCharge();
+   \   000000   B012....     CALL    #stopCharge
+    803              ulSmartConfigFinished = 0;
+   \   000004   8243....     MOV.W   #0x0, &ulSmartConfigFinished
+   \   000008   8243....     MOV.W   #0x0, &ulSmartConfigFinished + 2
+    804              ulCC3000Connected = 0;
+   \   00000C   B012....     CALL    #?Subroutine4
+    805              ulCC3000DHCP = 0;
+    806              OkToDoShutDown=0;
+   \                     ??CrossCallReturnLabel_63:
+   \   000010   8243....     MOV.W   #0x0, &OkToDoShutDown
+   \   000014   8243....     MOV.W   #0x0, &OkToDoShutDown + 2
+    807              
+    808              // Reset all the previous configuration
+    809              wlan_ioctl_set_connection_policy(DISABLE, DISABLE, DISABLE);	
+   \   000018   0312         PUSH.W  #0x0
+   \   00001A   0312         PUSH.W  #0x0
+   \   00001C   B012....     CALL    #?Subroutine9
+    810              wlan_ioctl_del_profile(255);
+   \                     ??CrossCallReturnLabel_31:
+   \   000020   7C43         MOV.B   #0xff, R12
+   \   000022   0D43         MOV.W   #0x0, R13
+   \   000024   B012....     CALL    #wlan_ioctl_del_profile
+    811              
+    812               // Reset all the previous configuration
+    813              wlan_ioctl_set_connection_policy(DISABLE, DISABLE, DISABLE);	
+   \   000028   0312         PUSH.W  #0x0
+   \   00002A   0312         PUSH.W  #0x0
+   \   00002C   B012....     CALL    #?Subroutine9
+    814              wlan_ioctl_del_profile(255);
+   \                     ??CrossCallReturnLabel_30:
+   \   000030   7C43         MOV.B   #0xff, R12
+   \   000032   0D43         MOV.W   #0x0, R13
+   \   000034   B012....     CALL    #wlan_ioctl_del_profile
+   \   000038   3152         ADD.W   #0x8, SP
+   \   00003A   053C         JMP     ??StartSmartConfig_2
+    815              
+    816              // Wait until CC3000 is disconnected
+    817              while (ulCC3000Connected == 1)
+    818              {
+    819                      __delay_cycles(333);
+   \                     ??StartSmartConfig_0:
+   \   00003C                ////////////// Start of 333 cycles delay.
+   \   00003C   0343         NOP
+   \   00003E   3F406D00     MOV.W   #0x6d, R15
+   \                     ??StartSmartConfig_5:
+   \   000042   3F53         ADD.W   #0xffff, R15
+   \   000044   FE2F         JC      ??StartSmartConfig_5
+   \   000046                ////////////// End of delay code.
+    820              }
+   \                     ??StartSmartConfig_2:
+   \   000046   9293....     CMP.W   #0x1, &ulCC3000Connected
+   \   00004A   0320         JNE     ??StartSmartConfig_3
+   \   00004C   8293....     CMP.W   #0x0, &ulCC3000Connected + 2
+   \   000050   F527         JEQ     ??StartSmartConfig_0
+    821              
+    822              // Trigger the Smart Config process
+    823           	
+    824              wlan_smart_config_set_prefix((char*)aucCC3000_prefix);
+   \                     ??StartSmartConfig_3:
+   \   000052   3C40....     MOV.W   #aucCC3000_prefix, R12
+   \   000056   B012....     CALL    #wlan_smart_config_set_prefix
+    825          	     
+    826              
+    827              // Start the SmartConfig start process
+    828          #ifdef CC3000_UNENCRYPTED_SMART_CONFIG
+    829              wlan_smart_config_start(0);
+   \   00005A   0C43         MOV.W   #0x0, R12
+   \   00005C   0D43         MOV.W   #0x0, R13
+   \   00005E   B012....     CALL    #wlan_smart_config_start
+    830          #else
+    831              wlan_smart_config_start(1);
+    832          #endif  
+    833              startCharge();                                                                         
+   \   000062   B012....     CALL    #startCharge
+   \   000066   043C         JMP     ??StartSmartConfig_4
+    834              // Wait for Smartconfig process complete
+    835              while (ulSmartConfigFinished == 0)
+    836              {
+    837                  __delay_cycles(2000000);
+   \                     ??StartSmartConfig_1:
+   \   000068   B012....     CALL    #?Subroutine8
+    838                  __delay_cycles(2000000);                     
+   \                     ??CrossCallReturnLabel_25:
+   \   00006C   B012....     CALL    #?Subroutine8
+    839              }
+   \                     ??StartSmartConfig_4:
+   \   000070   1F42....     MOV.W   &ulSmartConfigFinished, R15
+   \   000074   1FD2....     BIS.W   &ulSmartConfigFinished + 2, R15
+   \   000078   0F93         CMP.W   #0x0, R15
+   \   00007A   F627         JEQ     ??StartSmartConfig_1
+    840              
+    841              stopCharge();
+   \   00007C   B012....     CALL    #stopCharge
+    842          
+    843          #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
+    844              // Create new entry for AES encryption key
+    845              nvmem_create_entry(NVMEM_AES128_KEY_FILEID,16);
+    846              
+    847              // Write AES key to NVMEM
+    848              aes_write_key((unsigned char *)(&smartconfigkey[0]));
+    849              turnLedOn();
+    850              // Decrypt configuration information and add profile
+    851              wlan_smart_config_process();
+    852              turnLedOff();
+    853          #endif    
+    854              
+    855              // Configure to connect automatically to the AP retrieved in the 
+    856              // Smart config process
+    857              wlan_ioctl_set_connection_policy(DISABLE, DISABLE, ENABLE);
+   \   000080   0312         PUSH.W  #0x0
+   \   000082   1312         PUSH.W  #0x1
+   \   000084   B012....     CALL    #?Subroutine9
+    858              
+    859              // Reset the CC3000
+    860              wlan_stop();
+   \                     ??CrossCallReturnLabel_29:
+   \   000088   B012....     CALL    #wlan_stop
+    861              
+    862              __delay_cycles(2000000);
+   \   00008C   B012....     CALL    #?Subroutine8
+    863              
+    864              wlan_start(0);
+   \                     ??CrossCallReturnLabel_26:
+   \   000090   B012....     CALL    #?Subroutine10
+    865              
+    866              // Mask out all non-required events
+    867              wlan_set_event_mask(HCI_EVENT_MASK);
+    868              
+    869              __delay_cycles(20000000);  
+   \                     ??CrossCallReturnLabel_33:
+   \   000094   B012....     CALL    #?Subroutine3
+    870              
+    871              datos= "ConfigOK";            
+   \                     ??CrossCallReturnLabel_2:
+   \   000098   B240........ MOV.W   #`?<Constant "ConfigOK">`, &datos
+    872              sendMessageSmartConfig(datos);    
+   \   00009E   3C40....     MOV.W   #`?<Constant "ConfigOK">`, R12
+   \   0000A2   B012....     CALL    #sendMessageSmartConfig
+    873          }
+   \   0000A6   2152         ADD.W   #0x4, SP
+   \   0000A8   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine9:
+   \   000000   0E43         MOV.W   #0x0, R14
+   \   000002   0F43         MOV.W   #0x0, R15
+   \   000004   0C43         MOV.W   #0x0, R12
+   \   000006   0D43         MOV.W   #0x0, R13
+   \   000008   3040....     BR      #wlan_ioctl_set_connection_policy
+    874          
+
+   \                                 In  segment CODE, align 2
+    875          void takeVoltageCurrentPilotSamplesADC()
+   \                     takeVoltageCurrentPilotSamplesADC:
+    876          {  
+    877                //IE1 &= ~(WDTIE);
+    878                __bis_SR_register(GIE);
+   \   000000   32D2         BIS.W   #0x8, SR
+    879                
+    880                SD24CCTL2 |= SD24SC;   
+   \   000002   A2D30601     BIS.W   #0x2, &0x106
+    881          }
+   \   000006   3041         RET
+   \   000008                REQUIRE SD24CCTL2
+    882          
+
+   \                                 In  segment CODE, align 2
+    883          void checkPilot(unsigned short voltage)
+   \                     checkPilot:
+    884          {    
+    885                if(voltage > 65000)
+   \   000000   5E42....     MOV.B   &SmartConfigControl, R14
+   \   000004   3C90E9FD     CMP.W   #0xfde9, R12
+   \   000008   0D28         JNC     ??checkPilot_0
+    886                {
+    887                    SmartConfigControl=SmartConfigControl+1;
+   \   00000A   5E53         ADD.B   #0x1, R14
+    888                    if(SmartConfigControl==10)
+   \   00000C   7E900A00     CMP.B   #0xa, R14
+   \   000010   0324         JEQ     ??checkPilot_1
+   \   000012   C24E....     MOV.B   R14, &SmartConfigControl
+   \   000016   1C3C         JMP     ??checkPilot_2
+   \                     ??checkPilot_1:
+   \   000018   D243....     MOV.B   #0x1, &flag_IPConfiguration
+   \   00001C   F2400A00.... MOV.B   #0xa, &SmartConfigControl
+   \   000022   163C         JMP     ??checkPilot_2
+    889                    { 
+    890                        flag_IPConfiguration=1;
+    891                    }
+    892                }
+    893                if(voltage< 65000)
+   \                     ??checkPilot_0:
+   \   000024   3C90E8FD     CMP.W   #0xfde8, R12
+   \   000028   012C         JC      ??checkPilot_3
+    894                {
+    895                    SmartConfigControl=0;
+   \   00002A   4E43         MOV.B   #0x0, R14
+   \                     ??checkPilot_3:
+   \   00002C   C24E....     MOV.B   R14, &SmartConfigControl
+    896                }
+    897                if(voltage < 25000)
+   \   000030   3C90A861     CMP.W   #0x61a8, R12
+   \   000034   0D2C         JC      ??checkPilot_2
+    898                {
+    899                  if(status== 1)
+   \   000036   D293....     CMP.B   #0x1, &status
+   \   00003A   0324         JEQ     ??checkPilot_4
+    900                  {
+    901                    status = 0;
+    902                    datos="0:NOT";
+    903                    flag_SendData = 1;
+    904                  } 
+    905                  if(status== 2)
+   \   00003C   E293....     CMP.B   #0x2, &status
+   \   000040   0720         JNE     ??checkPilot_2
+    906                  {
+    907                    status = 0;
+   \                     ??checkPilot_4:
+   \   000042   C243....     MOV.B   #0x0, &status
+    908                    datos="0:NOT";
+   \   000046   B240........ MOV.W   #`?<Constant "0:NOT">`, &datos
+    909                    flag_SendData = 1;
+   \   00004C   D243....     MOV.B   #0x1, &flag_SendData
+    910                  } 
+    911          
+    912                } 
+    913                if(voltage < 19000)
+   \                     ??checkPilot_2:
+   \   000050   0F4C         MOV.W   R12, R15
+   \   000052   3F5067C5     ADD.W   #0xc567, R15
+   \   000056   3F909F0F     CMP.W   #0xf9f, R15
+   \   00005A   0D2C         JC      ??checkPilot_5
+    914                {
+    915                  if(voltage > 15000)
+    916                  {
+    917                    if(status== 0)
+   \   00005C   C293....     CMP.B   #0x0, &status
+   \   000060   0324         JEQ     ??checkPilot_6
+    918                    {       
+    919                      status = 1;
+    920                      datos="0:YES";
+    921                      flag_SendData = 1;
+    922                    }  
+    923                    if(status== 2)
+   \   000062   E293....     CMP.B   #0x2, &status
+   \   000066   0720         JNE     ??checkPilot_5
+    924                    {       
+    925                      status = 1;
+   \                     ??checkPilot_6:
+   \   000068   D243....     MOV.B   #0x1, &status
+    926                      datos="0:YES";
+   \   00006C   B240........ MOV.W   #`?<Constant "0:YES">`, &datos
+    927                      flag_SendData = 1;
+   \   000072   D243....     MOV.B   #0x1, &flag_SendData
+    928                    }
+    929                  }
+    930                } 
+    931                if(voltage < 16200)
+   \                     ??checkPilot_5:
+   \   000076   3C504FC9     ADD.W   #0xc94f, R12
+   \   00007A   3C909708     CMP.W   #0x897, R12
+   \   00007E   0D2C         JC      ??checkPilot_7
+    932                {
+    933                  if(voltage > 14000)
+    934                  {  
+    935                    if(status== 0)
+   \   000080   C293....     CMP.B   #0x0, &status
+   \   000084   0324         JEQ     ??checkPilot_8
+    936                    { 
+    937                      status = 2;
+    938                      datos="0:REA";
+    939                      flag_SendData = 1; 
+    940                    }
+    941                    if(status== 1)
+   \   000086   D293....     CMP.B   #0x1, &status
+   \   00008A   0720         JNE     ??checkPilot_7
+    942                    { 
+    943                      status = 2;
+   \                     ??checkPilot_8:
+   \   00008C   E243....     MOV.B   #0x2, &status
+    944                      datos="0:REA";
+   \   000090   B240........ MOV.W   #`?<Constant "0:REA">`, &datos
+    945                      flag_SendData = 1; 
+   \   000096   D243....     MOV.B   #0x1, &flag_SendData
+    946                    }
+    947                  }
+    948                }
+    949          }
+   \                     ??checkPilot_7:
+   \   00009A   3041         RET
+    950          
+
+   \                                 In  segment CODE, align 2
+    951          char statusPilot()
+   \                     statusPilot:
+    952          {
+    953              if(datos=="0:NOT")
+   \   000000   B290........ CMP.W   #`?<Constant "0:NOT">`, &datos
+   \   000006   0520         JNE     ??statusPilot_0
+    954              {         
+    955                    if(vehicleStatusChange==2)
+   \   000008   E293....     CMP.B   #0x2, &vehicleStatusChange
+   \   00000C   1424         JEQ     ??statusPilot_1
+    956                    {
+    957                      vehicleStatusChange=0;
+    958                      return 1;
+    959                    }
+    960                    vehicleStatusChange=2;
+   \   00000E   E243....     MOV.B   #0x2, &vehicleStatusChange
+    961              }
+    962              
+    963              if(datos=="0:YES")
+   \                     ??statusPilot_0:
+   \   000012   B290........ CMP.W   #`?<Constant "0:YES">`, &datos
+   \   000018   0720         JNE     ??statusPilot_2
+    964              {
+    965                    if(vehicleStatusChange==3)
+   \   00001A   F2900300.... CMP.B   #0x3, &vehicleStatusChange
+   \   000020   0A24         JEQ     ??statusPilot_1
+    966                    {
+    967                      vehicleStatusChange=0;
+    968                      return 1;
+    969                    }
+    970                    vehicleStatusChange=3;
+   \   000022   F2400300.... MOV.B   #0x3, &vehicleStatusChange
+    971              }
+    972              
+    973              if(datos=="0:REA")
+   \                     ??statusPilot_2:
+   \   000028   B290........ CMP.W   #`?<Constant "0:REA">`, &datos
+   \   00002E   0920         JNE     ??statusPilot_3
+    974              {
+    975                    if(vehicleStatusChange==4)
+   \   000030   E292....     CMP.B   #0x4, &vehicleStatusChange
+   \   000034   0420         JNE     ??statusPilot_4
+    976                    {
+    977                      vehicleStatusChange=0;
+   \                     ??statusPilot_1:
+   \   000036   C243....     MOV.B   #0x0, &vehicleStatusChange
+    978                      return 1;
+   \   00003A   5C43         MOV.B   #0x1, R12
+   \   00003C   3041         RET
+    979                    }
+    980                    vehicleStatusChange=4;
+   \                     ??statusPilot_4:
+   \   00003E   E242....     MOV.B   #0x4, &vehicleStatusChange
+    981              }
+    982              return 0;
+   \                     ??statusPilot_3:
+   \   000042   4C43         MOV.B   #0x0, R12
+   \   000044   3041         RET
+    983               
+    984          }
+
+   \                                 In  segment CODE, align 2
+    985          void calculatePower()
+   \                     calculatePower:
+    986          {    
+   \   000000   0A12         PUSH.W  R10
+    987                signed long longVoltage,longCurrent,power; 
+    988                
+    989                unsigned short voltage,current;
+    990                
+    991                voltage = SD24MEM0;         // Save CH0 results (clears IFG)
+   \   000002   1F421001     MOV.W   &0x110, R15
+    992                current = SD24MEM1;         // Save CH1 results (clears IFG)
+   \   000006   1A421201     MOV.W   &0x112, R10
+    993                
+    994                if(voltage<32768)
+   \   00000A   3F900080     CMP.W   #0x8000, R15
+   \   00000E   032C         JC      ??calculatePower_0
+    995                { 
+    996                  longVoltage=voltage;
+   \   000010   0C4F         MOV.W   R15, R12
+   \   000012   0D43         MOV.W   #0x0, R13
+   \   000014   023C         JMP     ??calculatePower_1
+    997                }
+    998                else
+    999                {
+   1000                  longVoltage=0xFFFF0000 | ((signed long) voltage);
+   \                     ??calculatePower_0:
+   \   000016   3D43         MOV.W   #0xffff, R13
+   \   000018   0C4F         MOV.W   R15, R12
+   1001                }
+   1002          
+   1003                if(current<32768)
+   \                     ??calculatePower_1:
+   \   00001A   3A900080     CMP.W   #0x8000, R10
+   \   00001E   032C         JC      ??calculatePower_2
+   1004                {
+   1005                  longCurrent=current;
+   \   000020   0E4A         MOV.W   R10, R14
+   \   000022   0F43         MOV.W   #0x0, R15
+   \   000024   023C         JMP     ??calculatePower_3
+   1006                }
+   1007                else
+   1008                {
+   1009                  longCurrent=0xFFFF0000 | ((signed long) current);
+   \                     ??calculatePower_2:
+   \   000026   3F43         MOV.W   #0xffff, R15
+   \   000028   0E4A         MOV.W   R10, R14
+   1010                }
+   1011                power=longVoltage*longCurrent;
+   1012                powerSummation = powerSummation + power;   
+   \                     ??calculatePower_3:
+   \   00002A   B012....     CALL    #?Mul32
+   \   00002E   0E4D         MOV.W   R13, R14
+   \   000030   3EE3         XOR.W   #0xffff, R14
+   \   000032   0E5E         RLA.W   R14
+   \   000034   0E7E         SUBC.W  R14, R14
+   \   000036   825C....     ADD.W   R12, &powerSummation
+   \   00003A   826D....     ADDC.W  R13, &powerSummation + 2
+   \   00003E   826E....     ADDC.W  R14, &powerSummation + 4
+   \   000042   826E....     ADDC.W  R14, &powerSummation + 6
+   1013                //Irms^2= ([sumatorio((Di)^2)]*[FactorEscala^2]) / (Número de muestras)
+   1014          }
+   \   000046   3A41         POP.W   R10
+   \   000048   3041         RET
+   \   00004A                REQUIRE SD24MEM0
+   \   00004A                REQUIRE SD24MEM1
+   1015          
+   1016          //******************************************************************************
+   1017          //******************************************************************************
+   1018          //******************************************************************************
+
+   \                                 In  segment CODE, align 2
+   1019          void main(void) {
+   \                     main:
+   1020              init_system();
+   \   000000   B012....     CALL    #init_system
+   1021              /* loop forever */
+   1022              while (1) {
+   1023                  output_logic();
+   \                     ??main_0:
+   \   000004   B012....     CALL    #output_logic
+   1024                  state_logic();
+   \   000008   B012....     CALL    #state_logic
+   \   00000C   FB3F         JMP     ??main_0
+   1025              }
+   1026          }
+   1027          
+
+   \                                 In  segment CODE, align 2
+   1028          char state_logic(void) {
+   \                     state_logic:
+   1029              char error = 0; 
+   \   000000   4C43         MOV.B   #0x0, R12
+   1030              switch (present_state) {
+   \   000002   5E42....     MOV.B   &present_state, R14
+   \   000006   7E804100     SUB.B   #0x41, R14
+   \   00000A   0724         JEQ     ??state_logic_4
+   \   00000C   5E83         SUB.B   #0x1, R14
+   \   00000E   1724         JEQ     ??state_logic_5
+   \   000010   5E83         SUB.B   #0x1, R14
+   \   000012   1224         JEQ     ??state_logic_6
+   \   000014   5E83         SUB.B   #0x1, R14
+   \   000016   2324         JEQ     ??state_logic_7
+   \   000018   293C         JMP     ??state_logic_8
+   1031              //******************************************IDLE STATE    
+   1032              case Idle:            
+   1033                if (flag_EnableCharge == 1) {                 
+   \                     ??state_logic_4:
+   \   00001A   B012....     CALL    #?Subroutine5
+   1034                  present_state = Charging;                       
+   1035                }      
+   1036                if(flag_EnableCharge==0)
+   1037                {     
+   1038                  present_state = Idle; 
+   1039                }
+   1040                if (flag_SendData == 1)
+   \                     ??CrossCallReturnLabel_3:
+   \   00001E   D293....     CMP.B   #0x1, &flag_SendData
+   \   000022   0320         JNE     ??state_logic_9
+   1041                {
+   1042                  present_state = SendData;
+   \   000024   F2404300.... MOV.B   #0x43, &present_state
+   1043                }
+   1044                if(flag_IPConfiguration==1)
+   \                     ??state_logic_9:
+   \   00002A   D293....     CMP.B   #0x1, &flag_IPConfiguration
+   \   00002E   1F20         JNE     ??state_logic_10
+   1045                {
+   1046                  present_state = IPConfig;
+   \   000030   F2404400.... MOV.B   #0x44, &present_state
+   \   000036   3041         RET
+   1047                }
+   1048                break;            
+   1049              //***************************************CHARGING STATE        
+   1050              case Charging:         
+   1051                if(flag_EnableCharge==0)
+   1052                {
+   1053                  present_state = Idle;
+   1054                }
+   1055                if(flag_EnableCharge==1)
+   1056                {
+   1057                  present_state = Charging;       
+   1058                }
+   1059                if (flag_SendData == 1) {                 
+   1060                  present_state = SendData;                 
+   1061                } 
+   1062          
+   1063                break;        
+   1064               //*************************************SENDDATA STATE                 
+   1065              case SendData:    
+   1066                if ((flag_SendData == 0)&&(flag_EnableCharge==0))
+   \                     ??state_logic_6:
+   \   000038   C293....     CMP.B   #0x0, &flag_SendData
+   \   00003C   0920         JNE     ??state_logic_1
+   \                     ??state_logic_5:
+   \   00003E   C293....     CMP.B   #0x0, &flag_EnableCharge
+   \   000042   0420         JNE     ??state_logic_11
+   \   000044   F2404100.... MOV.B   #0x41, &present_state
+   \   00004A   023C         JMP     ??state_logic_1
+   \                     ??state_logic_11:
+   \   00004C   B012....     CALL    #?Subroutine5
+   1067                {
+   1068                  present_state = Idle;
+   1069                }
+   1070                if ((flag_SendData == 0)&&(flag_EnableCharge==1))
+   1071                {
+   1072                  present_state = Charging;
+   1073                }
+   1074                if (flag_SendData == 1)
+   \                     ??state_logic_1:
+   \   000050   D293....     CMP.B   #0x1, &flag_SendData
+   \   000054   0C20         JNE     ??state_logic_10
+   1075                {
+   1076                  present_state = SendData;
+   \   000056   F2404300.... MOV.B   #0x43, &present_state
+   \   00005C   3041         RET
+   1077                }
+   1078                            
+   1079                break;
+   1080                //************************************IP CONFIG STATE
+   1081              case IPConfig:      
+   1082                if(flag_IPConfiguration==1)
+   1083                {
+   1084                  present_state = IPConfig;
+   1085                }      
+   1086                if(flag_IPConfiguration==0)
+   \                     ??state_logic_7:
+   \   00005E   C293....     CMP.B   #0x0, &flag_IPConfiguration
+   \   000062   0520         JNE     ??state_logic_10
+   1087                {
+   1088                  present_state = Idle;
+   \   000064   F2404100.... MOV.B   #0x41, &present_state
+   \   00006A   3041         RET
+   1089                }
+   1090                break;
+   1091                  default:
+   1092                      error = 1;
+   \                     ??state_logic_8:
+   \   00006C   5C43         MOV.B   #0x1, R12
+   1093              }
+   1094              return (error);
+   \                     ??state_logic_10:
+   \   00006E   3041         RET
+   1095          }
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine5:
+   \   000000   D293....     CMP.B   #0x1, &flag_EnableCharge
+   \   000004   0320         JNE     ??state_logic_2
+   \   000006   F2404200.... MOV.B   #0x42, &present_state
+   \                     ??state_logic_2:
+   \   00000C   3041         RET
+   1096          
+   1097          
+
+   \                                 In  segment CODE, align 2
+   1098          char output_logic(void) {
+   \                     output_logic:
+   \   000000   0A12         PUSH.W  R10
+   1099              char error = 0;
+   \   000002   4A43         MOV.B   #0x0, R10
+   1100              switch (present_state) {
+   \   000004   5E42....     MOV.B   &present_state, R14
+   \   000008   7E804100     SUB.B   #0x41, R14
+   \   00000C   0724         JEQ     ??output_logic_0
+   \   00000E   5E83         SUB.B   #0x1, R14
+   \   000010   0524         JEQ     ??output_logic_0
+   \   000012   5E83         SUB.B   #0x1, R14
+   \   000014   0A24         JEQ     ??output_logic_1
+   \   000016   5E83         SUB.B   #0x1, R14
+   \   000018   1524         JEQ     ??output_logic_2
+   \   00001A   1B3C         JMP     ??output_logic_3
+   1101              //**************************************   IDLE STATE 
+   1102              case Idle: 
+   1103                  receiveMessage();
+   1104                  closeSocket();
+   1105                  checkMessage();                 
+   1106                
+   1107                break;
+   1108              //**************************************   SENDING STATE     
+   1109              case Charging:                 
+   1110                  receiveMessage();  
+   \                     ??output_logic_0:
+   \   00001C   B012....     CALL    #receiveMessage
+   1111                  closeSocket();
+   \   000020   B012....     CALL    #closeSocket
+   1112                  checkMessage();  
+   \   000024   B012....     CALL    #checkMessage
+   1113          
+   1114                  break;
+   \   000028   153C         JMP     ??output_logic_4
+   1115              
+   1116              //**************************************   LISTENING STATE
+   1117              case SendData:          
+   1118                  char pilotState;
+   1119                  pilotState = statusPilot();
+   1120                  if(pilotState==1)
+   \                     ??output_logic_1:
+   \   00002A   B012....     CALL    #statusPilot
+   \   00002E   5C93         CMP.B   #0x1, R12
+   \   000030   0620         JNE     ??output_logic_5
+   1121                  {
+   1122                    sendMessage(datos);
+   \   000032   1C42....     MOV.W   &datos, R12
+   \   000036   B012....     CALL    #sendMessage
+   1123                    closeSocket();
+   \   00003A   B012....     CALL    #closeSocket
+   1124                  }
+   1125                  flag_SendData=0;
+   \                     ??output_logic_5:
+   \   00003E   C243....     MOV.B   #0x0, &flag_SendData
+   1126                
+   1127                break;
+   \   000042   083C         JMP     ??output_logic_4
+   1128              //**************************************  IP CONFIG STATE
+   1129              case IPConfig:    
+   1130                  StartSmartConfig();
+   \                     ??output_logic_2:
+   \   000044   B012....     CALL    #StartSmartConfig
+   1131                  __delay_cycles(20000000); 
+   \   000048   B012....     CALL    #?Subroutine3
+   1132                  flag_IPConfiguration=0;
+   \                     ??CrossCallReturnLabel_1:
+   \   00004C   C243....     MOV.B   #0x0, &flag_IPConfiguration
+   1133                
+   1134                break;
+   \   000050   013C         JMP     ??output_logic_4
+   1135              default:            
+   1136                error = 1;
+   \                     ??output_logic_3:
+   \   000052   5A43         MOV.B   #0x1, R10
+   1137              }
+   1138              return (error);
+   \                     ??output_logic_4:
+   \   000054   4C4A         MOV.B   R10, R12
+   \   000056   3A41         POP.W   R10
+   \   000058   3041         RET
+   1139          }
+   1140          
+
+   \                                 In  segment CODE, align 2
+   1141          void init_system(void) {
+   \                     init_system:
+   1142          
+   1143              WDTCTL = WDTPW + WDTHOLD;
+   \   000000   B240805A2001 MOV.W   #0x5a80, &0x120
+   1144              
+   1145              ulCC3000DHCP = 0;
+   \   000006   B012....     CALL    #??Subroutine4_1
+   1146              ulCC3000Connected = 0;
+   \                     ??CrossCallReturnLabel_65:
+   \   00000A   8243....     MOV.W   #0x0, &ulCC3000Connected
+   \   00000E   8243....     MOV.W   #0x0, &ulCC3000Connected + 2
+   1147              ulSocket = 0;
+   \   000012   8243....     MOV.W   #0x0, &ulSocket
+   \   000016   8243....     MOV.W   #0x0, &ulSocket + 2
+   1148              ulSmartConfigFinished=0;
+   \   00001A   8243....     MOV.W   #0x0, &ulSmartConfigFinished
+   \   00001E   8243....     MOV.W   #0x0, &ulSmartConfigFinished + 2
+   1149          
+   1150              // Board Initialization start
+   1151              initDriver();  
+   \   000022   B012....     CALL    #initDriver
+   1152              
+   1153              __delay_cycles(20000000); 
+   \   000026   B012....     CALL    #?Subroutine3
+   1154              
+   1155              stopCharge();
+   \                     ??CrossCallReturnLabel_0:
+   \   00002A   3040....     BR      #stopCharge
+   \   00002E                REQUIRE WDTCTL
+   1156          }
+   1157          
+   1158          #pragma vector=SD24_VECTOR
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   000000   3E41         POP.W   R14
+   \   000002   3F41         POP.W   R15
+   \   000004   3C41         POP.W   R12
+   \   000006   3D41         POP.W   R13
+   \   000008   0013         RETI
+
+   \                                 In  segment CODE, align 2
+   1159          __interrupt void SD24AISR(void)
+   \                     SD24AISR:
+   1160          {
+   \   000000   0D12         PUSH.W  R13
+   \   000002   0C12         PUSH.W  R12
+   \   000004   0F12         PUSH.W  R15
+   \   000006   0E12         PUSH.W  R14
+   1161            unsigned short voltage;
+   1162            
+   1163            switch (SD24IV)
+   \   000008   B292AE01     CMP.W   #0x8, &0x1ae
+   \   00000C   0920         JNE     ??SD24AISR_0
+   1164            {
+   1165            case 2:                       // SD24MEM Overflow
+   1166              break;
+   1167            case 4:                       // SD24MEM0 IFG
+   1168              break;
+   1169            case 6:                       // SD24MEM1 IFG                
+   1170              break;
+   1171              
+   1172            case 8:                       // SD24MEM2 IFG         
+   1173              if(flag_EnableCharge==1)
+   \   00000E   D293....     CMP.B   #0x1, &flag_EnableCharge
+   \   000012   0220         JNE     ??SD24AISR_1
+   1174              {       
+   1175                  calculatePower(); 
+   \   000014   B012....     CALL    #calculatePower
+   1176              }
+   1177              
+   1178              voltage = SD24MEM2;         // Save CH2 results (clears IFG)
+   \                     ??SD24AISR_1:
+   \   000018   1C421401     MOV.W   &0x114, R12
+   1179              checkPilot(voltage);
+   \   00001C   B012....     CALL    #checkPilot
+   1180              //IE1 |= WDTIE;   
+   1181              break;
+   1182            }
+   1183          }
+   \                     ??SD24AISR_0:
+   \   000020   ....         JMP     ?Subroutine0
+   \   000022                REQUIRE SD24MEM2
+   \   000022                REQUIRE SD24IV
+   1184          
+   1185          #pragma vector=WDT_VECTOR
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   1186          __interrupt void WatchDogTimer (void)
+   \                     WatchDogTimer:
+   1187          {  
+   \   000000   0D12         PUSH.W  R13
+   \   000002   0C12         PUSH.W  R12
+   \   000004   0F12         PUSH.W  R15
+   \   000006   0E12         PUSH.W  R14
+   1188              if(controlMeas==3)
+   \   000008   F2900300.... CMP.B   #0x3, &controlMeas
+   \   00000E   0420         JNE     ??WatchDogTimer_0
+   1189              {
+   1190                 takeVoltageCurrentPilotSamplesADC();
+   \   000010   B012....     CALL    #takeVoltageCurrentPilotSamplesADC
+   1191                 controlMeas=-1;
+   \   000014   F243....     MOV.B   #0xff, &controlMeas
+   1192              }
+   1193              controlMeas=controlMeas+1;
+   \                     ??WatchDogTimer_0:
+   \   000018   D253....     ADD.B   #0x1, &controlMeas
+   1194          }
+   \   00001C                REQUIRE ?Subroutine0
+   \   00001C                // Fall through to label ?Subroutine0
+
+   \                                 In  segment INTVEC, offset 0x14, root
+   \                     `??WatchDogTimer::??INTVEC 20`:
+   \   000014   ....         DC16    WatchDogTimer
+
+   \                                 In  segment INTVEC, offset 0x18, root
+   \                     `??SD24AISR::??INTVEC 24`:
+   \   000018   ....         DC16    SD24AISR
+
+   \                                 In  segment DATA16_ID, align 1, align-sorted
+   \                     `?<Initializer for printOnce>`:
+   \   000000   01           DC8 1
+
+   \                                 In  segment DATA16_ID, align 1, align-sorted
+   \                     `?<Initializer for digits>`:
+   \   000000   303132333435 DC8 "0123456789"
+   \            3637383900  
+
+   \                                 In  segment DATA16_ID, align 1, align-sorted
+   \                     `?<Initializer for present_state>`:
+   \   000000   41           DC8 65
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "IP:%d.%d.%d.%d\\f\\r">`:
+   \   000000   49503A25642E DC8 "IP:%d.%d.%d.%d\014\015"
+   \            25642E25642E
+   \            25640C0D00  
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "JAZZTEL_88BE">`:
+   \   000000   4A415A5A5445 DC8 "JAZZTEL_88BE"
+   \            4C5F38384245
+   \            00          
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "1:">`:
+   \   000000   313A00       DC8 "1:"
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "0:NOT">`:
+   \   000000   303A4E4F5400 DC8 "0:NOT"
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "0:YES">`:
+   \   000000   303A59455300 DC8 "0:YES"
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "0:READY">`:
+   \   000000   303A52454144 DC8 "0:READY"
+   \            5900        
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "ConfigOK">`:
+   \   000000   436F6E666967 DC8 "ConfigOK"
+   \            4F4B00      
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant "0:REA">`:
+   \   000000   303A52454100 DC8 "0:REA"
+   1195          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+     10   CC3000_UsynchCallback
+       10   -> sprintf
+     12   SD24AISR
+       12   -> calculatePower
+       12   -> checkPilot
+     10   StartSmartConfig
+        6   -> sendMessageSmartConfig
+        2   -> startCharge
+        2   -> stopCharge
+       10   -> wlan_ioctl_del_profile
+        6   -> wlan_ioctl_del_profile
+       10   -> wlan_ioctl_set_connection_policy
+        6   -> wlan_ioctl_set_connection_policy
+        6   -> wlan_set_event_mask
+        2   -> wlan_smart_config_set_prefix
+        2   -> wlan_smart_config_start
+        6   -> wlan_start
+        6   -> wlan_stop
+     12   WatchDogTimer
+       12   -> takeVoltageCurrentPilotSamplesADC
+      6   ascii_to_char
+        6   -> atoc
+      2   atoc
+      6   atoshort
+        6   -> atoc
+      4   calculatePower
+      2   checkMessage
+        2   -> closeSocket
+        2   -> sendPowerMeas
+        2   -> startCharge
+        2   -> stopCharge
+      2   checkPilot
+      2   closeSocket
+        2   -> closesocket
+     18   connectAP
+       18   -> netapp_dhcp
+       18   -> wlan_connect
+     64   initDriver
+       64   -> configureTimerPWM
+       64   -> configureWatchdog
+       64   -> initADC
+       56   -> initClk
+       56   -> init_spi
+       64   -> itoa
+       56   -> pio_init
+       64   -> wlan_init
+       64   -> wlan_set_event_mask
+       64   -> wlan_start
+      2   init_system
+        2   -> initDriver
+        2   -> stopCharge
+     10   itoa
+      2   main
+        2   -> init_system
+        2   -> output_logic
+        2   -> state_logic
+      4   output_logic
+        4   -> StartSmartConfig
+        4   -> checkMessage
+        4   -> closeSocket
+        4   -> receiveMessage
+        4   -> sendMessage
+        4   -> statusPilot
+     42   receiveMessage
+       32   -> bind
+       28   -> memset
+       42   -> recvfrom
+       28   -> socket
+      2   sendBootLoaderPatch
+     36   sendConsumptionMessage
+       36   -> sendto
+       24   -> socket
+      2   sendDriverPatch
+     38   sendMessage
+       38   -> sendto
+       26   -> socket
+       22   -> strlen
+     38   sendMessageSmartConfig
+       38   -> sendto
+       26   -> socket
+       22   -> strlen
+     18   sendPowerMeas
+       18   -> closeSocket
+       18   -> sendConsumptionMessage
+      2   sendWLFWPatch
+      2   state_logic
+      2   statusPilot
+      2   takeVoltageCurrentPilotSamplesADC
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       6  ?<Constant "0:NOT">
+       6  ?<Constant "0:REA">
+       8  ?<Constant "0:READY">
+       6  ?<Constant "0:YES">
+       3  ?<Constant "1:">
+       9  ?<Constant "ConfigOK">
+      17  ?<Constant "IP:%d.%d.%d.%d\f\r">
+      13  ?<Constant "JAZZTEL_88BE">
+      11  ?<Initializer for digits>
+       1  ?<Initializer for present_state>
+       1  ?<Initializer for printOnce>
+       6  ??Subroutine1_0
+      10  ??Subroutine4_1
+      10  ?Subroutine0
+      38  ?Subroutine1
+      16  ?Subroutine10
+      10  ?Subroutine11
+      12  ?Subroutine12
+      18  ?Subroutine13
+      10  ?Subroutine14
+      16  ?Subroutine16
+      10  ?Subroutine17
+      24  ?Subroutine18
+       6  ?Subroutine19
+      12  ?Subroutine2
+      20  ?Subroutine20
+       6  ?Subroutine21
+      16  ?Subroutine3
+       8  ?Subroutine4
+      14  ?Subroutine5
+      12  ?Subroutine6
+      20  ?Subroutine7
+      16  ?Subroutine8
+      12  ?Subroutine9
+     158  CC3000_UsynchCallback
+       1  IE1
+       4  OkToDoShutDown
+      34  SD24AISR
+       2  SD24AISR::??INTVEC 24
+       2  SD24CCTL2
+       2  SD24IV
+       2  SD24MEM0
+       2  SD24MEM1
+       2  SD24MEM2
+       1  SmartConfigControl
+     170  StartSmartConfig
+       2  TACCR1
+       2  WDTCTL
+      28  WatchDogTimer
+       2  WatchDogTimer::??INTVEC 20
+      30  ascii_to_char
+      94  atoc
+      30  atoshort
+       3  aucCC3000_prefix
+      74  calculatePower
+     254  checkMessage
+     156  checkPilot
+      18  closeSocket
+     110  connectAP
+       1  controlMeas
+       2  datos
+      11  digits
+       1  flag_EnableCharge
+       1  flag_IPConfiguration
+       1  flag_SendData
+       1  flag_sendConsumption
+     160  initDriver
+      46  init_system
+      76  itoa
+      14  main
+      90  output_logic
+       8  powerSummation
+       1  present_state
+       1  printOnce
+      22  pucCC3000_Rx_Buffer
+     104  receiveMessage
+       2  sendBootLoaderPatch
+     412  sendConsumptionMessage
+       2  sendDriverPatch
+      32  sendMessage
+      54  sendMessageSmartConfig
+     224  sendPowerMeas
+       0  sendWLFWPatch
+     112  state_logic
+       1  status
+      70  statusPilot
+       8  takeVoltageCurrentPilotSamplesADC
+       1  ucStopSmartConfig
+       4  ulCC3000Connected
+       4  ulCC3000DHCP
+       4  ulCC3000DHCP_configured
+       4  ulSmartConfigFinished
+       4  ulSocket
+       1  vehicleStatusChange
+
+ 
+ 2 884 bytes in segment CODE
+    15 bytes in segment DATA16_AN
+    71 bytes in segment DATA16_C
+    13 bytes in segment DATA16_I
+    13 bytes in segment DATA16_ID
+    22 bytes in segment DATA16_N
+    43 bytes in segment DATA16_Z
+     4 bytes in segment INTVEC
+ 
+ 2 884 bytes of CODE  memory
+    84 bytes of CONST memory (+  4 bytes shared)
+    78 bytes of DATA  memory (+ 15 bytes shared)
+
+Errors: none
+Warnings: 1

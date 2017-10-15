@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>1727954994</fileChecksum>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Listener.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Main.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Wifi.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\SmartConfig.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\SmartConfig.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Wattmeter.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Wattmeter.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Wifi.h</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdio.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Listener.pbi</file>
+      <file>$PROJ_DIR$\Debug\List\SmartConfig.s43</file>
+      <file>$PROJ_DIR$\Debug\Obj\EV_Charger.pbd</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\host_driver_version.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\data_types.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Wattmeter.r43</file>
+      <file>$PROJ_DIR$\Debug\List\Analog_sampling.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\board.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\Charger_States.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\ControlPilot.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\Charger_States.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\Analog_sampling.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ysizet.h</file>
+      <file>$PROJ_DIR$\Debug\List\Charger_States.lst</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$TOOLKIT_DIR$\inc\in430.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ystdio.h</file>
+      <file>$TOOLKIT_DIR$\inc\msp430afe253.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
+      <file>$PROJ_DIR$\..\Source\inc\spi.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\Wattmeter.pbi</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.h</file>
+      <file>$PROJ_DIR$\Debug\List\Wattmeter.s43</file>
+      <file>$PROJ_DIR$\Debug\List\Wifi.s43</file>
+      <file>$PROJ_DIR$\Debug\Exe\CC3000 Host Driver.r43</file>
+      <file>$PROJ_DIR$\Debug\List\Wattmeter.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\Wifi.pbi</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.h</file>
+      <file>$PROJ_DIR$\Debug\List\ControlPilot.lst</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\board.c</file>
+      <file>$PROJ_DIR$\Debug\List\SmartConfig.lst</file>
+      <file>$PROJ_DIR$\Debug\Exe\EV_Charger.d43</file>
+      <file>$PROJ_DIR$\Debug\Obj\Listener.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\Main.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\ControlPilot.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\FlashMemory.pbi</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\security.h</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430fn.r43</file>
+      <file>$PROJ_DIR$\Debug\List\Listener.s43</file>
+      <file>$PROJ_DIR$\Debug\List\board.lst</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\application_version.h</file>
+      <file>$PROJ_DIR$\lnk430afe253.xcl</file>
+      <file>$PROJ_DIR$\..\Source\CC3000 Spi\spi_version.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
+      <file>$PROJ_DIR$\Debug\List\FlashMemory.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\Wifi.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\SmartConfig.pbi</file>
+      <file>$PROJ_DIR$\Debug\List\Main.lst</file>
+      <file>$PROJ_DIR$\Debug\List\Listener.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\board.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\SmartConfig.r43</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Charger_Station.h</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430fn.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\error_codes.h</file>
+      <file>$PROJ_DIR$\Debug\List\FlashMemory.s43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\string.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\errno.h</file>
+      <file>$PROJ_DIR$\Debug\List\Charger_States.s43</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Analog_sampling.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\board.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Main.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Charger_States.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Charger_States.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\ControlPilot.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\ControlPilot.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\FlashMemory.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\FlashMemory.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Listener.c</file>
+      <file>$TOOLKIT_DIR$\config\linker\multiplier.xcl</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdlib.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.h</file>
+      <file>$PROJ_DIR$\Debug\Exe\EV_Charger.ulp</file>
+      <file>$PROJ_DIR$\Debug\List\EV_Charger.map</file>
+      <file>$PROJ_DIR$\Debug\Exe\CC3000_Spi.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\FlashMemory.r43</file>
+      <file>$PROJ_DIR$\Debug\List\Main.s43</file>
+      <file>$PROJ_DIR$\Debug\Obj\Analog_sampling.pbi</file>
+      <file>$PROJ_DIR$\Debug\List\Wifi.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\Main.pbi</file>
+      <file>$PROJ_DIR$\Debug\List\Analog_sampling.s43</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.h</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Analog_sampling.c</file>
+      <file>$PROJ_DIR$\Debug\List\ControlPilot.s43</file>
+      <file>$PROJ_DIR$\Debug\List\board.s43</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.h</file>
+    </outputs>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Wifi.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 36 94 59</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 39</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 97 86 15 68 85 29 60 31 67 70 9 57 23 72 32 87 34 42 101 40 30 71 10 27 56 75 7 54 14 8 28 26 25 50 1</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 29 85 70 7 86 9 60 40 50 68 101 56 14 1 72 31 57 67 34 87 42 30 75 54 8 15 32 23 71 10 28 26 25 97 27</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\SmartConfig.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 12 44 65</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 61</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 97 86 15 68 85 29 60 31 67 70 9 57 23 72 32 87 34 42 101 40 30 71 10 27 56 75 54 14 50 1 74 80 0 4 6 7 8 28 26 25</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 29 4 32 23 86 54 71 40 75 15 42 101 56 50 80 7 85 9 60 10 87 30 14 1 74 0 6 8 68 72 31 57 67 70 34 27 28 26 25 97</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Wattmeter.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 35 38 16</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 33</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 74 80 0 4 6 7 1 8 28 26 25</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 6 26 0 1 80 4 7 8 25 74 28</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 89 45</file>
+        </tool>
+        <tool>
+          <name>ULP430</name>
+          <file> 88</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\board.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 100 53 64</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 18</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 8 28 26 25 97 86 15 68 85 29 60 31 67 70 9 57 23 72 32 40 87 34 42 82 101 75 1</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 28 60 75 32 70 42 86 82 15 40 26 25 85 9 29 97 87 101 1 68 72 23 31 57 67 8 34</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\EV_Charger.d43</name>
+      <outputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 89</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>XLINK</name>
+          <file> 55 84 22 64 37 90 19 48 91 46 47 65 16 59 51</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Main.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 92 62 47</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 95</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 101 86 15 68 85 29 60 31 67 70 9 57 23 72 32 97 87 34 42 75 80 74 0 82 78 6 4 1 7 8 28 26 25 71 10 27</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 60 29 10 15 82 80 1 32 9 70 86 87 6 8 85 31 57 67 42 26 97 75 74 0 78 4 7 71 68 72 23 34 28 101 25 27</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Charger_States.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 73 24 19</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 21</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 101 86 15 68 85 29 60 31 67 70 9 57 23 72 32 97 75 80 74 0 82 78 6 4 1 7 8 28 26 25 71 10 27</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 60 85 29 78 57 74 7 86 31 67 75 0 4 71 15 32 9 70 28 26 97 80 82 6 1 8 10 68 72 23 101 25 27</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\ControlPilot.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 99 41 48</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 20</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 66 74 1 8 28 26 25</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 28 1 74 8 26 25 66</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\FlashMemory.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 69 58 91</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 49</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 7 6 8 28 26 25 75 74 80 78 0 4 82 101 86 15 68 85 29 60 31 67 70 9 57 23 72 32 1</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 4 85 9 74 101 86 70 60 8 78 7 26 15 32 29 6 75 80 0 82 1 28 25 68 72 23 31 57 67</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Listener.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 52 63 46</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 11</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 7 6 8 28 26 25 75 74 80 78 0 82 4 101 86 15 68 85 29 60 31 67 70 9 57 23 72 32 1</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 26 82 15 74 101 32 29 9 70 60 8 78 6 86 85 23 75 80 0 4 7 1 28 25 68 72 31 57 67</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\EV_Charger\Analog_sampling.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 96 17 22</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 93</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 80 1 6 78 74 8 28 26 25</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 74 26 6 8 1 78 80 25 28</file>
+        </tool>
+      </inputs>
+    </file>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <outputs/>
+    <forcedrebuild>
+      <name>[MULTI_TOOL]</name>
+      <tool>XLINK</tool>
+    </forcedrebuild>
+  </configuration>
+</project>
+
+

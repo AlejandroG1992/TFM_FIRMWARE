@@ -1,0 +1,315 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:42
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\ControlPilot.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\ControlPilot.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\ControlPilot.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME ControlPilot
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBLIC CheckPilot
+        PUBLIC ControlPilot_OFF
+        PUBLIC ControlPilot_ON
+        PUBWEAK P1OUT
+        PUBWEAK P1SEL
+        PUBWEAK TACCR1
+        PUBWEAK TACCTL1
+
+        EXTERN Pilot_Num
+        EXTERN Pilot_State
+
+// Z:\EV_Charger\Source\EV_Charger\ControlPilot.c
+//    1 #include "Charger_Station.h"
+//    2 #include "Analog_sampling.h"
+//    3 #include "Main.h"
+//    4 #include <msp430.h>
+
+        ASEGN DATA16_AN:DATA:NOROOT,021H
+// unsigned char volatile P1OUT
+P1OUT:
+        DS8 1
+
+        ASEGN DATA16_AN:DATA:NOROOT,026H
+// unsigned char volatile P1SEL
+P1SEL:
+        DS8 1
+
+        ASEGN DATA16_AN:DATA:NOROOT,0164H
+// unsigned short volatile TACCTL1
+TACCTL1:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,0174H
+// unsigned short volatile TACCR1
+TACCR1:
+        DS8 2
+//    5 
+//    6 
+//    7 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//    8 void CheckPilot( unsigned short Pilot_H)
+CheckPilot:
+//    9 {    
+//   10   
+//   11     
+//   12   //Verify Pilot_H
+//   13     if((Pilot_H<26042)&(Pilot_H>22035))   //11V<Pilot_H<13V
+        MOV.W   #0xfa6, R15
+        MOV.W   R12, R14
+        ADD.W   #0xa9ec, R14
+        CMP.W   R15, R14
+        JC      ??CheckPilot_13
+//   14     {
+//   15       if(Pilot_State=='A')
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x41, &Pilot_State
+        CALL    #?Subroutine0
+//   16       {
+//   17         if(Pilot_Num<20000)
+//   18           Pilot_Num ++;
+//   19       }
+//   20       else
+//   21         Pilot_Num=0;
+//   22       
+//   23       Pilot_State='A';
+??CrossCallReturnLabel_0:
+        MOV.B   #0x41, &Pilot_State
+//   24       return;
+        RET
+//   25     }
+//   26     
+//   27     if((Pilot_H<20032)&(Pilot_H>16025))   //10V<Pilot_H<8V
+??CheckPilot_13:
+        MOV.W   R12, R14
+        ADD.W   #0xc166, R14
+        CMP.W   R15, R14
+        JC      ??CheckPilot_14
+//   28     {
+//   29       if(Pilot_State=='B')
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x42, &Pilot_State
+        CALL    #?Subroutine0
+//   30       {
+//   31         if(Pilot_Num<20000)
+//   32           Pilot_Num ++;
+//   33       }
+//   34       else
+//   35         Pilot_Num=0;
+//   36       
+//   37       Pilot_State='B';
+??CrossCallReturnLabel_1:
+        MOV.B   #0x42, &Pilot_State
+//   38       return;
+        RET
+//   39     }
+//   40     
+//   41     if((Pilot_H<14022)&(Pilot_H>10016))   //6V<Pilot_H<7V
+??CheckPilot_14:
+        MOV.W   R12, R14
+        ADD.W   #0xd8df, R14
+        CMP.W   #0xfa5, R14
+        JC      ??CheckPilot_15
+//   42     {
+//   43       if(Pilot_State=='C')
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x43, &Pilot_State
+        CALL    #?Subroutine0
+//   44       {
+//   45         if(Pilot_Num<20000)
+//   46           Pilot_Num ++;
+//   47       }
+//   48       else
+//   49         Pilot_Num=0;
+//   50       
+//   51       Pilot_State='C';
+??CrossCallReturnLabel_2:
+        MOV.B   #0x43, &Pilot_State
+//   52       return;
+        RET
+//   53     }
+//   54     
+//   55     if((Pilot_H<8013)&(Pilot_H>4006))   //2V<Pilot_H<4V
+??CheckPilot_15:
+        MOV.W   R12, R14
+        ADD.W   #0xf059, R14
+        CMP.W   R15, R14
+        JC      ??CheckPilot_16
+//   56     {
+//   57       if(Pilot_State=='D')
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x44, &Pilot_State
+        CALL    #?Subroutine0
+//   58       {
+//   59         if(Pilot_Num<20000)
+//   60           Pilot_Num ++;
+//   61       }
+//   62       else
+//   63         Pilot_Num=0;
+//   64       
+//   65       Pilot_State='D';
+??CrossCallReturnLabel_3:
+        MOV.B   #0x44, &Pilot_State
+//   66       return;
+        RET
+//   67     }
+//   68     
+//   69      if((Pilot_H<2003)|(Pilot_H>63532))   //-1V<Pilot_H<1V
+??CheckPilot_16:
+        CMP.W   #0x7d3, R12
+        JNC     ??CheckPilot_17
+        CMP.W   #0xf82d, R12
+        JC      ??CheckPilot_17
+//   70     {
+//   71       if(Pilot_State=='E')
+//   72       {
+//   73        if(Pilot_Num<20000)
+//   74           Pilot_Num ++;
+//   75       }
+//   76       else
+//   77         Pilot_Num=0;
+//   78       
+//   79       Pilot_State='E';
+//   80       return;
+//   81     }
+//   82     
+//   83     if((Pilot_H<43500)&(Pilot_H>39493))   //-13V<Pilot_H<-11V
+        ADD.W   #0x65ba, R12
+        CMP.W   R15, R12
+        JNC     ??CheckPilot_18
+//   84     {
+//   85       if(Pilot_State=='F')
+//   86       {
+//   87         if(Pilot_Num<20000)
+//   88           Pilot_Num ++;
+//   89       }
+//   90       else
+//   91         Pilot_Num=0;
+//   92       
+//   93       Pilot_State='F';
+//   94       return;
+//   95     }
+//   96    Pilot_Num=0;
+        MOV.W   #0x0, &Pilot_Num
+//   97    Pilot_State='G';
+        MOV.B   #0x47, &Pilot_State
+//   98       
+//   99 }
+        RET
+??CheckPilot_17:
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x45, &Pilot_State
+        CALL    #?Subroutine0
+??CrossCallReturnLabel_4:
+        MOV.B   #0x45, &Pilot_State
+        RET
+??CheckPilot_18:
+        MOV.W   &Pilot_Num, R15
+        CMP.B   #0x46, &Pilot_State
+        CALL    #?Subroutine0
+??CrossCallReturnLabel_5:
+        MOV.B   #0x46, &Pilot_State
+        RET
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?Subroutine0:
+        JNE     ??CheckPilot_1
+        CMP.W   #0x4e20, R15
+        JC      ??CheckPilot_2
+        ADD.W   #0x1, R15
+        JMP     ??CheckPilot_2
+??CheckPilot_1:
+        MOV.W   #0x0, R15
+??CheckPilot_2:
+        MOV.W   R15, &Pilot_Num
+        RET
+//  100 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  101 void ControlPilot_ON()  //Duty=TA0CCR1
+ControlPilot_ON:
+//  102 {  
+//  103    if(TACCR1<240)
+        CMP.W   #0xf0, &0x174
+        JC      ??ControlPilot_ON_0
+//  104      TACCR1=8000;
+        MOV.W   #0x1f40, &0x174
+//  105    P1SEL |= BIT1;
+??ControlPilot_ON_0:
+        BIS.B   #0x2, &0x26
+//  106    TACCTL1 = OUTMOD_7; 
+        MOV.W   #0xe0, &0x164
+//  107 }
+        RET
+        REQUIRE TACCR1
+        REQUIRE P1SEL
+        REQUIRE TACCTL1
+//  108 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//  109 void ControlPilot_OFF()
+ControlPilot_OFF:
+//  110 {  
+//  111    P1SEL &= ~(BIT1);
+        BIC.B   #0x2, &0x26
+//  112    P1OUT |= BIT1;
+        BIS.B   #0x2, &0x21
+//  113    TACCTL1 = OUTMOD_0;  
+        MOV.W   #0x0, &0x164
+//  114 }
+        RET
+        REQUIRE P1SEL
+        REQUIRE P1OUT
+        REQUIRE TACCTL1
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+// 
+// 270 bytes in segment CODE
+//   6 bytes in segment DATA16_AN
+// 
+// 270 bytes of CODE memory
+//   0 bytes of DATA memory (+ 6 bytes shared)
+//
+//Errors: none
+//Warnings: none

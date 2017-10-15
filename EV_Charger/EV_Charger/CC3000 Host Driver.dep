@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <fileChecksum>982727817</fileChecksum>
+  <configuration>
+    <name>Debug</name>
+    <outputs>
+      <file>$PROJ_DIR$\Debug\Obj\security.pbi</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.c</file>
+      <file>$PROJ_DIR$\Debug\List\hci.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\hci.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\in430.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\yvals.h</file>
+      <file>$PROJ_DIR$\Debug\List\nvmem.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\netapp.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Defaults.h</file>
+      <file>$PROJ_DIR$\Debug\List\netapp.lst</file>
+      <file>$PROJ_DIR$\..\Source\inc\spi.h</file>
+      <file>$PROJ_DIR$\Debug\Exe\CC3000 Host Driver.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ycheck.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\socket.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\cc3000_common.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\nvmem.pbi</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\string.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdint.h</file>
+      <file>$PROJ_DIR$\Debug\List\cc3000_common.lst</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdlib.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Threads.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\wlan.r43</file>
+      <file>$PROJ_DIR$\Debug\List\evnt_handler.lst</file>
+      <file>$PROJ_DIR$\Debug\Obj\cc3000_common.r43</file>
+      <file>$PROJ_DIR$\Debug\Obj\socket.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ystdio.h</file>
+      <file>$TOOLKIT_DIR$\lib\dlib\dl430fn.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.c</file>
+      <file>$PROJ_DIR$\Debug\Obj\evnt_handler.pbi</file>
+      <file>$PROJ_DIR$\Debug\List\security.lst</file>
+      <file>$TOOLKIT_DIR$\inc\intrinsics.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\data_types.h</file>
+      <file>$TOOLKIT_DIR$\inc\msp430afe253.h</file>
+      <file>$PROJ_DIR$\Debug\List\socket.lst</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\errno.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\evnt_handler.r43</file>
+      <file>$PROJ_DIR$\Debug\Exe\CC3000 Host Driver.ulp</file>
+      <file>$PROJ_DIR$\Debug\Obj\CC3000 Host Driver.pbd</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\error_codes.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\stdio.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\netapp.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\wlan.pbi</file>
+      <file>$PROJ_DIR$\Debug\Obj\security.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\DLib_Product.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\hci.r43</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\xencoding_limits.h</file>
+      <file>$TOOLKIT_DIR$\inc\dlib\c\ysizet.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.c</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\security.c</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\security.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.c</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.c</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.h</file>
+      <file>$PROJ_DIR$\Debug\Obj\nvmem.r43</file>
+      <file>$TOOLKIT_DIR$\inc\msp430.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\host_driver_version.h</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.c</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.h</file>
+      <file>$PROJ_DIR$\Debug\List\wlan.lst</file>
+      <file>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.c</file>
+      <file>$PROJ_DIR$\..\Source\EV_Charger\Wifi.h</file>
+    </outputs>
+    <file>
+      <name>[ROOT_NODE]</name>
+      <outputs>
+        <tool>
+          <name>XAR</name>
+          <file> 11</file>
+        </tool>
+        <tool>
+          <name>ULP430</name>
+          <file> 38</file>
+        </tool>
+      </outputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\cc3000_common.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 18 23</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 14</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 27 32 40 19 12 5 8 26 45 47 20 48 35 17 55 57 36 62</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 12 57 40 35 47 45 5 27 62 55 36 32 19 17 8 20 26 48</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\CC3000 Host Driver.r43</name>
+      <inputs>
+        <tool>
+          <name>XAR</name>
+          <file> 23 37 46 7 58 44 24 21</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\evnt_handler.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 22 37</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 29</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 27 32 40 19 12 5 8 26 45 47 20 48 35 17 16 62 36 55 57 49 10 41 25 59 33 4 31</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 12 5 27 40 16 47 45 48 62 35 8 20 26 36 57 55 49 10 59 32 19 17 41 33 4 31 25</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\nvmem.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 6 58</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 15</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 41 12 5 8 26 45 47 20 48 25 16 51 27 32 40 19 35 17 62 55 36</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 48 62 16 36 12 47 40 27 41 51 55 5 25 35 8 20 26 45 32 19 17</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\security.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 30 44</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 0</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 53 51 27 32 40 19 12 5 8 26 45 47 20 48 35 17</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 12 47 35 45 5 40 48 51 27 32 19 17 8 20 26 53</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\socket.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 34 24</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 13</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 41 12 5 8 26 45 47 20 48 25 16 19 62 27 32 40 35 17 55 36 49 59 33 4 31</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 12 49 20 5 62 8 26 47 35 55 48 45 41 16 19 36 59 25 40 33 4 31 27 32 17</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\wlan.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 63 21</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 43</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 16 12 5 8 26 45 47 20 48 57 27 32 40 19 35 17 62 10 41 25 55 51 53 36</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 62 27 53 5 45 47 25 16 55 12 40 57 10 51 36 8 20 26 35 19 48 32 17 41</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\hci.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 2 46</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 3</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 27 32 40 19 12 5 8 26 45 47 20 48 35 17 62 10 16 41 25 36 55 57</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 20 12 57 35 5 16 10 40 47 8 26 27 62 36 32 19 17 48 45 41 55 25</file>
+        </tool>
+      </inputs>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\Source\CC3000HostDriver\netapp.c</name>
+      <outputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 9 7</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 42</file>
+        </tool>
+      </outputs>
+      <inputs>
+        <tool>
+          <name>ICC430</name>
+          <file> 16 12 5 8 26 45 47 20 48 49 32 62 27 40 19 35 17 55 36 51</file>
+        </tool>
+        <tool>
+          <name>BICOMP</name>
+          <file> 55 48 49 51 12 32 19 5 62 16 36 47 27 17 8 20 26 45 40 35</file>
+        </tool>
+      </inputs>
+    </file>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <outputs/>
+    <forcedrebuild>
+      <name>[MULTI_TOOL]</name>
+      <tool>XLINK</tool>
+    </forcedrebuild>
+    <forcedrebuild>
+      <name>[REBUILD_ALL]</name>
+    </forcedrebuild>
+  </configuration>
+</project>
+
+

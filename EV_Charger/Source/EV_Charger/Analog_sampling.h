@@ -1,0 +1,2 @@
+//Functions declaration
+void takeVoltageCurrentPilotSamplesADC();

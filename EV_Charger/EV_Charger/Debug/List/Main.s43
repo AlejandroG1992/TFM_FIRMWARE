@@ -1,0 +1,293 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:44
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\Main.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\Main.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Main.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME Main
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?cstart_init_zero
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBLIC Charger_State
+        PUBLIC Pilot_Num
+        PUBLIC Pilot_State
+        PUBWEAK SD24CCTL2
+        PUBWEAK SVSCTL
+        PUBWEAK TACCTL2
+        PUBWEAK WDTCTL
+        PUBLIC main
+        PUBLIC powerSummation
+
+        EXTERN configureWatchdog
+        EXTERN pio_init
+        EXTERN read_Registers
+        EXTERN startCharge
+        EXTERN stopCharge
+        EXTERN ControlPilot_OFF
+        EXTERN ControlPilot_ON
+        EXTERN initClk
+        EXTERN configureTimerPWM
+        EXTERN initADC
+        EXTERN initDriver
+        EXTERN Timeout
+        EXTERN receiveMessage
+        EXTERN checkMessage
+
+// Z:\EV_Charger\Source\EV_Charger\Main.c
+//    1 #include "nvmem.h"
+//    2 #include "wlan.h"
+//    3 #include "evnt_handler.h"
+//    4 #include "board.h"
+//    5 #include "ControlPilot.h"
+//    6 #include "Analog_sampling.h"
+//    7 #include "ControlPilot.h"
+//    8 #include "Listener.h"
+//    9 #include "FlashMemory.h"
+//   10 #include "Charger_States.h"
+//   11 #include "Wattmeter.h"
+//   12 #include "SmartConfig.h"
+//   13 #include "Main.h"
+//   14 #include "Wifi.h"
+//   15 #include <msp430.h>
+
+        ASEGN DATA16_AN:DATA:NOROOT,0106H
+// unsigned short volatile SD24CCTL2
+SD24CCTL2:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,055H
+// unsigned char volatile SVSCTL
+SVSCTL:
+        DS8 1
+
+        ASEGN DATA16_AN:DATA:NOROOT,0166H
+// unsigned short volatile TACCTL2
+TACCTL2:
+        DS8 2
+
+        ASEGN DATA16_AN:DATA:NOROOT,0120H
+// unsigned short volatile WDTCTL
+WDTCTL:
+        DS8 2
+//   16 #include <string.h>
+//   17 #include <stdio.h>
+//   18 
+//   19 char output_logic(void);
+//   20 char state_logic(void);
+//   21 
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(0)
+        REQUIRE ?cstart_init_zero
+//   22 char Pilot_State; 
+Pilot_State:
+        DS8 1
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+//   23 unsigned short Pilot_Num;
+Pilot_Num:
+        DS8 2
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(1)
+        REQUIRE ?cstart_init_zero
+//   24 signed long  long powerSummation=0;                //64 bits
+powerSummation:
+        DS8 8
+
+        RSEG DATA16_Z:DATA:SORT:NOROOT(0)
+        REQUIRE ?cstart_init_zero
+//   25 char Charger_State;
+Charger_State:
+        DS8 1
+//   26 
+//   27 
+//   28 
+//   29 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   30 void main(void) {
+main:
+//   31     WDTCTL = WDTPW + WDTHOLD;
+        MOV.W   #0x5a80, &0x120
+//   32     configureWatchdog();    //InitSystems
+        CALL    #configureWatchdog
+//   33     pio_init();
+        CALL    #pio_init
+//   34 
+//   35     /*
+//   36     Charger_State=0;
+//   37     set_Registers(0);
+//   38     while(1);
+//   39     */
+//   40     
+//   41     /*
+//   42     Charger_State=3;
+//   43     powerSummation=325879;
+//   44     TA0CCR1=8425;
+//   45     set_Registers();
+//   46     read_Registers();
+//   47     
+//   48     */
+//   49     //wlan_connect("EVNET", 5);
+//   50     
+//   51   // StartSmartConfig();
+//   52    // resetWDT();
+//   53    // while(1);
+//   54    // Timeout();
+//   55    
+//   56 
+//   57     //Pruebas
+//   58     /*
+//   59     Charger_State=3;
+//   60     powerSummation=325879.234;
+//   61     setStatus();
+//   62     readStatus();
+//   63     setIdentifier(43); 
+//   64     */
+//   65     
+//   66   
+//   67     //Init Global Variables - Restore nonvolatil variables  (powerSummation, Charger_State, TA0CCR1)    
+//   68      read_Registers();
+        CALL    #read_Registers
+//   69      
+//   70      if(Charger_State==Charging)
+        CMP.B   #0x2, &Charger_State
+        JNE     ??main_2
+//   71          startCharge();
+        CALL    #startCharge
+        JMP     ??main_3
+//   72      else
+//   73          stopCharge();
+??main_2:
+        CALL    #stopCharge
+//   74      
+//   75       if((Charger_State==Charging)|(Charger_State==Connected))
+??main_3:
+        CMP.B   #0x2, &Charger_State
+        JEQ     ??main_4
+        CMP.B   #0x1, &Charger_State
+        JEQ     ??main_4
+//   76          ControlPilot_ON() ;
+//   77      else
+//   78          ControlPilot_OFF() ;
+        CALL    #ControlPilot_OFF
+        JMP     ??main_5
+??main_4:
+        CALL    #ControlPilot_ON
+//   79      
+//   80  
+//   81      initClk(); 
+??main_5:
+        CALL    #initClk
+//   82      
+//   83      //ControlPilot_ON();
+//   84      //stopCharge();
+//   85      //Pilot_State=0;
+//   86         
+//   87      SVSCTL=VLD0+VLD3+SVSON;    
+        MOV.B   #0x94, &0x55
+//   88      
+//   89      
+//   90      
+//   91   //Init AD, PWM and Interrupts 
+//   92       configureTimerPWM();  
+        CALL    #configureTimerPWM
+//   93       initADC();     
+        CALL    #initADC
+//   94       
+//   95     
+//   96    // P1SEL &= ~(BIT1);
+//   97    // P1SEL2 &= ~(BIT1);
+//   98    // stopCharge();
+//   99     
+//  100     
+//  101  
+//  102     initDriver();
+        CALL    #initDriver
+//  103     //wlan_ioctl_set_connection_policy(DISABLE, ENABLE, ENABLE);
+//  104     Timeout(); 
+        CALL    #Timeout
+//  105     TACCTL2|= CCIE;
+        BIS.W   #0x10, &0x166
+//  106     SD24CCTL2 |= SD24IE;
+        BIS.W   #0x8, &0x106
+//  107     __bis_SR_register(GIE);
+        BIS.W   #0x8, SR
+//  108     
+//  109    //Not configured: Need SmartConfig
+//  110        while(Charger_State==SmartConfig_Exec){};
+??main_0:
+        CMP.B   #0x5, &Charger_State
+        JEQ     ??main_0
+//  111          
+//  112       
+//  113     while(1){
+//  114      
+//  115      receiveMessage();
+??main_1:
+        CALL    #receiveMessage
+//  116      checkMessage();
+        CALL    #checkMessage
+        JMP     ??main_1
+        REQUIRE WDTCTL
+        REQUIRE SVSCTL
+        REQUIRE TACCTL2
+        REQUIRE SD24CCTL2
+//  117     };
+//  118    
+//  119  
+//  120 }
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+//  121 
+// 
+// 112 bytes in segment CODE
+//   7 bytes in segment DATA16_AN
+//  12 bytes in segment DATA16_Z
+// 
+// 112 bytes of CODE memory
+//  12 bytes of DATA memory (+ 7 bytes shared)
+//
+//Errors: none
+//Warnings: none

@@ -1,0 +1,281 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:44
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\Main.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\Main.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Main.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\Main.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\Main.c
+      1          #include "nvmem.h"
+      2          #include "wlan.h"
+      3          #include "evnt_handler.h"
+      4          #include "board.h"
+      5          #include "ControlPilot.h"
+      6          #include "Analog_sampling.h"
+      7          #include "ControlPilot.h"
+      8          #include "Listener.h"
+      9          #include "FlashMemory.h"
+     10          #include "Charger_States.h"
+     11          #include "Wattmeter.h"
+     12          #include "SmartConfig.h"
+     13          #include "Main.h"
+     14          #include "Wifi.h"
+     15          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x106
+   \   unsigned short volatile SD24CCTL2
+   \                     SD24CCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x55
+   \   unsigned char volatile SVSCTL
+   \                     SVSCTL:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_AN, at 0x166
+   \   unsigned short volatile TACCTL2
+   \                     TACCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x120
+   \   unsigned short volatile WDTCTL
+   \                     WDTCTL:
+   \   000000                DS8 2
+     16          #include <string.h>
+     17          #include <stdio.h>
+     18          
+     19          char output_logic(void);
+     20          char state_logic(void);
+     21          
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     22          char Pilot_State; 
+   \                     Pilot_State:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     23          unsigned short Pilot_Num;
+   \                     Pilot_Num:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_Z, align 2, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     24          signed long  long powerSummation=0;                //64 bits
+   \                     powerSummation:
+   \   000000                DS8 8
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     25          char Charger_State;
+   \                     Charger_State:
+   \   000000                DS8 1
+     26          
+     27          
+     28          
+     29          
+
+   \                                 In  segment CODE, align 2
+     30          void main(void) {
+   \                     main:
+     31              WDTCTL = WDTPW + WDTHOLD;
+   \   000000   B240805A2001 MOV.W   #0x5a80, &0x120
+     32              configureWatchdog();    //InitSystems
+   \   000006   B012....     CALL    #configureWatchdog
+     33              pio_init();
+   \   00000A   B012....     CALL    #pio_init
+     34          
+     35              /*
+     36              Charger_State=0;
+     37              set_Registers(0);
+     38              while(1);
+     39              */
+     40              
+     41              /*
+     42              Charger_State=3;
+     43              powerSummation=325879;
+     44              TA0CCR1=8425;
+     45              set_Registers();
+     46              read_Registers();
+     47              
+     48              */
+     49              //wlan_connect("EVNET", 5);
+     50              
+     51            // StartSmartConfig();
+     52             // resetWDT();
+     53             // while(1);
+     54             // Timeout();
+     55             
+     56          
+     57              //Pruebas
+     58              /*
+     59              Charger_State=3;
+     60              powerSummation=325879.234;
+     61              setStatus();
+     62              readStatus();
+     63              setIdentifier(43); 
+     64              */
+     65              
+     66            
+     67              //Init Global Variables - Restore nonvolatil variables  (powerSummation, Charger_State, TA0CCR1)    
+     68               read_Registers();
+   \   00000E   B012....     CALL    #read_Registers
+     69               
+     70               if(Charger_State==Charging)
+   \   000012   E293....     CMP.B   #0x2, &Charger_State
+   \   000016   0320         JNE     ??main_2
+     71                   startCharge();
+   \   000018   B012....     CALL    #startCharge
+   \   00001C   023C         JMP     ??main_3
+     72               else
+     73                   stopCharge();
+   \                     ??main_2:
+   \   00001E   B012....     CALL    #stopCharge
+     74               
+     75                if((Charger_State==Charging)|(Charger_State==Connected))
+   \                     ??main_3:
+   \   000022   E293....     CMP.B   #0x2, &Charger_State
+   \   000026   0624         JEQ     ??main_4
+   \   000028   D293....     CMP.B   #0x1, &Charger_State
+   \   00002C   0324         JEQ     ??main_4
+     76                   ControlPilot_ON() ;
+     77               else
+     78                   ControlPilot_OFF() ;
+   \   00002E   B012....     CALL    #ControlPilot_OFF
+   \   000032   023C         JMP     ??main_5
+   \                     ??main_4:
+   \   000034   B012....     CALL    #ControlPilot_ON
+     79               
+     80           
+     81               initClk(); 
+   \                     ??main_5:
+   \   000038   B012....     CALL    #initClk
+     82               
+     83               //ControlPilot_ON();
+     84               //stopCharge();
+     85               //Pilot_State=0;
+     86                  
+     87               SVSCTL=VLD0+VLD3+SVSON;    
+   \   00003C   F24094005500 MOV.B   #0x94, &0x55
+     88               
+     89               
+     90               
+     91            //Init AD, PWM and Interrupts 
+     92                configureTimerPWM();  
+   \   000042   B012....     CALL    #configureTimerPWM
+     93                initADC();     
+   \   000046   B012....     CALL    #initADC
+     94                
+     95              
+     96             // P1SEL &= ~(BIT1);
+     97             // P1SEL2 &= ~(BIT1);
+     98             // stopCharge();
+     99              
+    100              
+    101           
+    102              initDriver();
+   \   00004A   B012....     CALL    #initDriver
+    103              //wlan_ioctl_set_connection_policy(DISABLE, ENABLE, ENABLE);
+    104              Timeout(); 
+   \   00004E   B012....     CALL    #Timeout
+    105              TACCTL2|= CCIE;
+   \   000052   B2D010006601 BIS.W   #0x10, &0x166
+    106              SD24CCTL2 |= SD24IE;
+   \   000058   B2D20601     BIS.W   #0x8, &0x106
+    107              __bis_SR_register(GIE);
+   \   00005C   32D2         BIS.W   #0x8, SR
+    108              
+    109             //Not configured: Need SmartConfig
+    110                 while(Charger_State==SmartConfig_Exec){};
+   \                     ??main_0:
+   \   00005E   F2900500.... CMP.B   #0x5, &Charger_State
+   \   000064   FC27         JEQ     ??main_0
+    111                   
+    112                
+    113              while(1){
+    114               
+    115               receiveMessage();
+   \                     ??main_1:
+   \   000066   B012....     CALL    #receiveMessage
+    116               checkMessage();
+   \   00006A   B012....     CALL    #checkMessage
+   \   00006E   FB3F         JMP     ??main_1
+   \   000070                REQUIRE WDTCTL
+   \   000070                REQUIRE SVSCTL
+   \   000070                REQUIRE TACCTL2
+   \   000070                REQUIRE SD24CCTL2
+    117              };
+    118             
+    119           
+    120          }
+    121          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   main
+        2   -> ControlPilot_OFF
+        2   -> ControlPilot_ON
+        2   -> Timeout
+        2   -> checkMessage
+        2   -> configureTimerPWM
+        2   -> configureWatchdog
+        2   -> initADC
+        2   -> initClk
+        2   -> initDriver
+        2   -> pio_init
+        2   -> read_Registers
+        2   -> receiveMessage
+        2   -> startCharge
+        2   -> stopCharge
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       1  Charger_State
+       2  Pilot_Num
+       1  Pilot_State
+       2  SD24CCTL2
+       1  SVSCTL
+       2  TACCTL2
+       2  WDTCTL
+     112  main
+       8  powerSummation
+
+ 
+ 112 bytes in segment CODE
+   7 bytes in segment DATA16_AN
+  12 bytes in segment DATA16_Z
+ 
+ 112 bytes of CODE memory
+  12 bytes of DATA memory (+ 7 bytes shared)
+
+Errors: none
+Warnings: none

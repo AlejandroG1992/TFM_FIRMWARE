@@ -1,0 +1,221 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           12/Dec/2016  09:55:01
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\CC3000HostDriver\cc3000_common.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\CC3000HostDriver\cc3000_common.c -D
+#        MDNS_ADVERTISE_HOST -D CC3000_UNENCRYPTED_SMART_CONFIG -lcN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ --diag_suppress Pa039 -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h"
+#        --library_module -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\cc3000_common.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\cc3000_common.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\CC3000HostDriver\cc3000_common.c
+      1          /*****************************************************************************
+      2          *
+      3          *  cc3000_common.c.c  - CC3000 Host Driver Implementation.
+      4          *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
+      5          *
+      6          *  Redistribution and use in source and binary forms, with or without
+      7          *  modification, are permitted provided that the following conditions
+      8          *  are met:
+      9          *
+     10          *    Redistributions of source code must retain the above copyright
+     11          *    notice, this list of conditions and the following disclaimer.
+     12          *
+     13          *    Redistributions in binary form must reproduce the above copyright
+     14          *    notice, this list of conditions and the following disclaimer in the
+     15          *    documentation and/or other materials provided with the   
+     16          *    distribution.
+     17          *
+     18          *    Neither the name of Texas Instruments Incorporated nor the names of
+     19          *    its contributors may be used to endorse or promote products derived
+     20          *    from this software without specific prior written permission.
+     21          *
+     22          *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+     23          *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+     24          *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+     25          *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+     26          *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+     27          *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+     28          *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     29          *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+     30          *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+     31          *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+     32          *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     33          *
+     34          *****************************************************************************/
+     35          //*****************************************************************************
+     36          //
+     37          //! \addtogroup common_api
+     38          //! @{
+     39          //
+     40          //*****************************************************************************
+     41          /******************************************************************************
+     42          *
+     43          * Include files
+     44          *
+     45          *****************************************************************************/
+     46          #include "cc3000_common.h"
+     47          #include "socket.h"
+     48          #include "wlan.h"
+     49          #include "evnt_handler.h"
+     50          
+     51          //*****************************************************************************
+     52          //
+     53          //!  __error__
+     54          //!
+     55          //!  @param  pcFilename - file name, where error occurred
+     56          //!  @param  ulLine     - line number, where error occurred
+     57          //!
+     58          //!  @return none
+     59          //!
+     60          //!  @brief stub function for ASSERT macro
+     61          //
+     62          //*****************************************************************************
+     63          void __error__(CHARF *pcFilename, UINT32 ulLine)
+     64          {
+     65          	//TODO full up function
+     66          }
+     67          
+     68          
+     69          
+     70          //*****************************************************************************
+     71          //
+     72          //!  UINT32_TO_STREAM_f
+     73          //!
+     74          //!  @param  p       pointer to the new stream
+     75          //!  @param  u32     pointer to the 32 bit
+     76          //!
+     77          //!  @return               pointer to the new stream
+     78          //!
+     79          //!  @brief                This function is used for copying 32 bit to stream
+     80          //!						   while converting to little endian format.
+     81          //
+     82          //*****************************************************************************
+     83          
+     84          UINT8* UINT32_TO_STREAM_f (UINT8 *p, UINT32 u32)
+     85          {
+     86          	*(p)++ = (UINT8)(u32);
+     87          	*(p)++ = (UINT8)((u32) >> 8);
+     88          	*(p)++ = (UINT8)((u32) >> 16);
+     89          	*(p)++ = (UINT8)((u32) >> 24);
+     90          	return p;
+     91          }
+     92          
+     93          //*****************************************************************************
+     94          //
+     95          //!  UINT16_TO_STREAM_f
+     96          //!
+     97          //!  @param  p       pointer to the new stream
+     98          //!  @param  u32     pointer to the 16 bit
+     99          //!
+    100          //!  @return               pointer to the new stream
+    101          //!
+    102          //!  @brief               This function is used for copying 16 bit to stream
+    103          //!                       while converting to little endian format.
+    104          //
+    105          //*****************************************************************************
+    106          
+    107          UINT8* UINT16_TO_STREAM_f (UINT8 *p, UINT16 u16)
+    108          {
+    109          	*(p)++ = (UINT8)(u16);
+    110          	*(p)++ = (UINT8)((u16) >> 8);
+    111          	return p;
+    112          }
+    113          
+    114          //*****************************************************************************
+    115          //
+    116          //!  STREAM_TO_UINT16_f
+    117          //!
+    118          //!  @param  p          pointer to the stream
+    119          //!  @param  offset     offset in the stream
+    120          //!
+    121          //!  @return               pointer to the new 16 bit
+    122          //!
+    123          //!  @brief               This function is used for copying received stream to
+    124          //!                       16 bit in little endian format.
+    125          //
+    126          //*****************************************************************************
+    127          
+    128          UINT16 STREAM_TO_UINT16_f(CHARF* p, UINT16 offset)
+    129          {
+    130          	return (UINT16)((UINT16)((UINT16)
+    131          		(*(p + offset + 1)) << 8) + (UINT16)(*(p + offset)));
+    132          }
+    133          
+    134          //*****************************************************************************
+    135          //
+    136          //!  STREAM_TO_UINT32_f
+    137          //!
+    138          //!  @param  p          pointer to the stream
+    139          //!  @param  offset     offset in the stream
+    140          //!
+    141          //!  @return               pointer to the new 32 bit
+    142          //!
+    143          //!  @brief               This function is used for copying received stream to
+    144          //!                       32 bit in little endian format.
+    145          //
+    146          //*****************************************************************************
+    147          
+    148          UINT32 STREAM_TO_UINT32_f(CHARF* p, UINT16 offset)
+    149          {
+    150          	return (UINT32)((UINT32)((UINT32)
+    151          		(*(p + offset + 3)) << 24) + (UINT32)((UINT32)
+    152          		(*(p + offset + 2)) << 16) + (UINT32)((UINT32)
+    153          		(*(p + offset + 1)) << 8) + (UINT32)(*(p + offset)));
+    154          }
+    155          
+    156          
+    157          
+    158          //*****************************************************************************
+    159          //
+    160          // Close the Doxygen group.
+    161          //! @}
+    162          //
+    163          //*****************************************************************************
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   STREAM_TO_UINT16_f
+      6   STREAM_TO_UINT32_f
+      2   UINT16_TO_STREAM_f
+      2   UINT32_TO_STREAM_f
+      2   __error__
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      16  STREAM_TO_UINT16_f
+      46  STREAM_TO_UINT32_f
+      16  UINT16_TO_STREAM_f
+      32  UINT32_TO_STREAM_f
+       2  __error__
+
+ 
+ 112 bytes in segment CODE
+ 
+ 112 bytes of CODE memory
+
+Errors: none
+Warnings: none

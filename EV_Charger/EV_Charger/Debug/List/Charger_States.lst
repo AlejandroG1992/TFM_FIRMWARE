@@ -1,0 +1,434 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:42
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\Charger_States.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\Charger_States.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Charger_States.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\Charger_States.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\Charger_States.c
+      1          #include "nvmem.h"
+      2          #include "wlan.h"
+      3          #include "board.h"
+      4          #include "ControlPilot.h"
+      5          #include "Analog_sampling.h"
+      6          #include "ControlPilot.h"
+      7          #include "Listener.h"
+      8          #include "FlashMemory.h"
+      9          #include "Charger_States.h"
+     10          #include "Wattmeter.h"
+     11          #include "SmartConfig.h"
+     12          #include "Main.h"
+     13          #include "Wifi.h"
+     14          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x166
+   \   unsigned short volatile TACCTL2
+   \                     TACCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x120
+   \   unsigned short volatile WDTCTL
+   \                     WDTCTL:
+   \   000000                DS8 2
+     15          #include <string.h>
+     16          #include <stdio.h>
+     17          
+     18          
+     19          
+
+   \                                 In  segment CODE, align 2
+     20          void Charger_States()
+   \                     Charger_States:
+     21          {
+     22            
+     23            switch(Charger_State)
+   \   000000   5E42....     MOV.B   &Charger_State, R14
+   \   000004   4E83         SUB.B   #0x0, R14
+   \   000006   0D24         JEQ     ??Charger_States_10
+   \   000008   5E83         SUB.B   #0x1, R14
+   \   00000A   4124         JEQ     ??Charger_States_11
+   \   00000C   5E83         SUB.B   #0x1, R14
+   \   00000E   7224         JEQ     ??Charger_States_12
+   \   000010   5E83         SUB.B   #0x1, R14
+   \   000012   8A24         JEQ     ??Charger_States_13
+   \   000014   5E83         SUB.B   #0x1, R14
+   \   000016   8F24         JEQ     ??Charger_States_14
+   \   000018   5E83         SUB.B   #0x1, R14
+   \   00001A   A024         JEQ     ??Charger_States_15
+   \   00001C   5E83         SUB.B   #0x1, R14
+   \   00001E   B924         JEQ     ??Charger_States_16
+   \   000020   3041         RET
+     24            {
+     25              case Not_Connected:
+     26                ControlPilot_OFF();
+   \                     ??Charger_States_10:
+   \   000022   B012....     CALL    #?Subroutine0
+     27                stopCharge();
+     28                if((Pilot_State=='B')&(Pilot_Num>2000))
+   \                     ??CrossCallReturnLabel_2:
+   \   000026   5E42....     MOV.B   &Pilot_State, R14
+   \   00002A   7E904200     CMP.B   #0x42, R14
+   \   00002E   1420         JNE     ??Charger_States_17
+   \   000030   B290D107.... CMP.W   #0x7d1, &Pilot_Num
+   \   000036   0D2C         JC      ??Charger_States_18
+   \                     ??Charger_States_1:
+   \   000038   4F43         MOV.B   #0x0, R15
+   \                     ??Charger_States_22:
+   \   00003A   4D43         MOV.B   #0x0, R13
+   \                     ??Charger_States_0:
+   \   00003C   4E43         MOV.B   #0x0, R14
+   \                     ??Charger_States_2:
+   \   00003E   B2903300.... CMP.W   #0x33, &Pilot_Num
+   \   000044   4C7C         SUBC.B  R12, R12
+   \   000046   5C53         ADD.B   #0x1, R12
+   \   000048   4FDD         BIS.B   R13, R15
+   \   00004A   4FDE         BIS.B   R14, R15
+   \   00004C   4FBC         BIT.B   R12, R15
+   \   00004E   4020         JNE     ??Charger_States_19
+   \   000050   3041         RET
+   \                     ??Charger_States_18:
+   \   000052   D243....     MOV.B   #0x1, &Charger_State
+   \   000056   F03F         JMP     ??Charger_States_1
+     29                   Charger_State=Connected;
+     30                if((Pilot_State=='E')&(Pilot_Num>2000))
+   \                     ??Charger_States_17:
+   \   000058   7E904500     CMP.B   #0x45, R14
+   \   00005C   0720         JNE     ??Charger_States_20
+   \   00005E   B290D107.... CMP.W   #0x7d1, &Pilot_Num
+   \   000064   E92B         JNC     ??Charger_States_1
+   \   000066   E242....     MOV.B   #0x4, &Charger_State
+   \   00006A   E63F         JMP     ??Charger_States_1
+     31                   Charger_State=SmartConfig_Inic;
+     32                if(((Pilot_State=='G')|(Pilot_State=='C')|(Pilot_State=='D'))&(Pilot_Num>50))
+   \                     ??Charger_States_20:
+   \   00006C   7E904700     CMP.B   #0x47, R14
+   \   000070   0220         JNE     ??Charger_States_21
+   \   000072   5F43         MOV.B   #0x1, R15
+   \   000074   E23F         JMP     ??Charger_States_22
+   \                     ??Charger_States_21:
+   \   000076   4F43         MOV.B   #0x0, R15
+   \   000078   7E904300     CMP.B   #0x43, R14
+   \   00007C   0220         JNE     ??Charger_States_23
+   \   00007E   5D43         MOV.B   #0x1, R13
+   \   000080   DD3F         JMP     ??Charger_States_0
+   \                     ??Charger_States_23:
+   \   000082   4D43         MOV.B   #0x0, R13
+   \   000084   7E904400     CMP.B   #0x44, R14
+   \   000088   D923         JNE     ??Charger_States_0
+   \   00008A   5E43         MOV.B   #0x1, R14
+   \   00008C   D83F         JMP     ??Charger_States_2
+     33                   Charger_State=Error;    
+     34                break;
+     35                
+     36              case Connected:
+     37                ControlPilot_ON();
+   \                     ??Charger_States_11:
+   \   00008E   B012....     CALL    #ControlPilot_ON
+     38                stopCharge();
+   \   000092   B012....     CALL    #stopCharge
+     39                if((Pilot_State=='A')&(Pilot_Num>100))
+   \   000096   5E42....     MOV.B   &Pilot_State, R14
+   \   00009A   7E904100     CMP.B   #0x41, R14
+   \   00009E   1F20         JNE     ??Charger_States_24
+   \   0000A0   B2906500.... CMP.W   #0x65, &Pilot_Num
+   \   0000A6   182C         JC      ??Charger_States_25
+   \                     ??Charger_States_27:
+   \   0000A8   4F43         MOV.B   #0x0, R15
+   \                     ??Charger_States_3:
+   \   0000AA   4E43         MOV.B   #0x0, R14
+   \                     ??Charger_States_4:
+   \   0000AC   B290B90B.... CMP.W   #0xbb9, &Pilot_Num
+   \   0000B2   4D7D         SUBC.B  R13, R13
+   \   0000B4   5D53         ADD.B   #0x1, R13
+   \   0000B6   4FDE         BIS.B   R14, R15
+   \   0000B8   4FBD         BIT.B   R13, R15
+   \   0000BA   0224         JEQ     ??Charger_States_5
+     40                   Charger_State=Not_Connected;
+     41                if(((Pilot_State=='C')|(Pilot_State=='D'))&(Pilot_Num>3000))
+     42                   Charger_State=Charging;
+   \   0000BC   E243....     MOV.B   #0x2, &Charger_State
+     43                if((Pilot_State=='G')&(Pilot_Num>50))
+     44                   Charger_State=Error;  
+     45                break;
+     46                
+     47              case Charging:
+     48                ControlPilot_ON();
+     49                startCharge();
+     50                if((Pilot_State=='A')&(Pilot_Num>50))
+     51                   Charger_State=Not_Connected;
+     52                if((Pilot_State=='B')&(Pilot_Num>50))
+     53                   Charger_State=Connected;
+     54                if((Pilot_State=='G')&(Pilot_Num>50))
+   \                     ??Charger_States_5:
+   \   0000C0   F2904700.... CMP.B   #0x47, &Pilot_State
+   \   0000C6   6F20         JNE     ??Charger_States_26
+   \   0000C8   B2903300.... CMP.W   #0x33, &Pilot_Num
+   \   0000CE   6B28         JNC     ??Charger_States_26
+     55                   Charger_State=Error;  
+   \                     ??Charger_States_19:
+   \   0000D0   F2400300.... MOV.B   #0x3, &Charger_State
+   \   0000D6   3041         RET
+   \                     ??Charger_States_25:
+   \   0000D8   C243....     MOV.B   #0x0, &Charger_State
+   \   0000DC   E53F         JMP     ??Charger_States_27
+   \                     ??Charger_States_24:
+   \   0000DE   7E904300     CMP.B   #0x43, R14
+   \   0000E2   0220         JNE     ??Charger_States_28
+   \   0000E4   5F43         MOV.B   #0x1, R15
+   \   0000E6   E13F         JMP     ??Charger_States_3
+   \                     ??Charger_States_28:
+   \   0000E8   4F43         MOV.B   #0x0, R15
+   \   0000EA   7E904400     CMP.B   #0x44, R14
+   \   0000EE   DD23         JNE     ??Charger_States_3
+   \   0000F0   5E43         MOV.B   #0x1, R14
+   \   0000F2   DC3F         JMP     ??Charger_States_4
+   \                     ??Charger_States_12:
+   \   0000F4   B012....     CALL    #ControlPilot_ON
+   \   0000F8   B012....     CALL    #startCharge
+   \   0000FC   F2904100.... CMP.B   #0x41, &Pilot_State
+   \   000102   0720         JNE     ??Charger_States_29
+   \   000104   B2903300.... CMP.W   #0x33, &Pilot_Num
+   \   00010A   4D28         JNC     ??Charger_States_26
+   \   00010C   C243....     MOV.B   #0x0, &Charger_State
+   \   000110   3041         RET
+   \                     ??Charger_States_29:
+   \   000112   F2904200.... CMP.B   #0x42, &Pilot_State
+   \   000118   D323         JNE     ??Charger_States_5
+   \   00011A   B2903300.... CMP.W   #0x33, &Pilot_Num
+   \   000120   4228         JNC     ??Charger_States_26
+   \   000122   D243....     MOV.B   #0x1, &Charger_State
+   \   000126   3041         RET
+     56                break;
+     57            
+     58              case Error:      
+     59                ControlPilot_OFF();
+   \                     ??Charger_States_13:
+   \   000128   B012....     CALL    #?Subroutine0
+     60                stopCharge();
+     61                if((Pilot_State=='E')&(Pilot_Num>2000))
+   \                     ??CrossCallReturnLabel_1:
+   \   00012C   F2904500.... CMP.B   #0x45, &Pilot_State
+   \   000132   3920         JNE     ??Charger_States_26
+   \   000134   323C         JMP     ??Charger_States_30
+     62                   Charger_State=SmartConfig_Inic;
+     63                break;
+     64                
+     65              case SmartConfig_Inic:
+     66                Charger_State=SmartConfig_Exec;
+   \                     ??Charger_States_14:
+   \   000136   F2400500.... MOV.B   #0x5, &Charger_State
+     67                TA0CCR1=0;
+   \   00013C   82437401     MOV.W   #0x0, &0x174
+     68                powerSummation=0;
+   \   000140   8243....     MOV.W   #0x0, &powerSummation
+   \   000144   8243....     MOV.W   #0x0, &powerSummation + 2
+   \   000148   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   00014C   8243....     MOV.W   #0x0, &powerSummation + 6
+     69                set_Registers(0x00);
+   \   000150   4C43         MOV.B   #0x0, R12
+   \   000152   B012....     CALL    #set_Registers
+     70                WDTCTL=0;    //Reset
+   \   000156   82432001     MOV.W   #0x0, &0x120
+     71                break;
+   \   00015A   3041         RET
+     72                
+     73              case SmartConfig_Exec:  
+     74                ControlPilot_OFF();
+   \                     ??Charger_States_15:
+   \   00015C   B012....     CALL    #?Subroutine0
+     75                stopCharge();  
+     76                TACCTL2&= ~CCIE;
+   \                     ??CrossCallReturnLabel_0:
+   \   000160   B2C010006601 BIC.W   #0x10, &0x166
+     77                WDTCTL = WDTPW + WDTHOLD;
+   \   000166   B240805A2001 MOV.W   #0x5a80, &0x120
+     78          
+     79                
+     80                     
+     81                StartSmartConfig();
+   \   00016C   B012....     CALL    #StartSmartConfig
+     82                
+     83                configureWatchdog(); 
+   \   000170   B012....     CALL    #configureWatchdog
+     84                Charger_State=SmartConfig_Assign;
+   \   000174   F2400600.... MOV.B   #0x6, &Charger_State
+     85                set_Registers(0x00);
+   \   00017A   4C43         MOV.B   #0x0, R12
+   \   00017C   B012....     CALL    #set_Registers
+     86                TACCTL2|= CCIE;   
+   \   000180   B2D010006601 BIS.W   #0x10, &0x166
+     87                ControlPilot_ON();
+   \   000186   B012....     CALL    #ControlPilot_ON
+     88                initDriver();
+   \   00018A   B012....     CALL    #initDriver
+     89               //wlan_ioctl_set_connection_policy(DISABLE, ENABLE, ENABLE);
+     90                sendSmartConfigComplete();    
+   \   00018E   3040....     BR      #sendSmartConfigComplete
+     91                break;
+     92                
+     93              case SmartConfig_Assign:
+     94                if((Pilot_State=='E')&(Pilot_Num>2000))
+   \                     ??Charger_States_16:
+   \   000192   F2904500.... CMP.B   #0x45, &Pilot_State
+   \   000198   0620         JNE     ??Charger_States_26
+   \                     ??Charger_States_30:
+   \   00019A   B290D107.... CMP.W   #0x7d1, &Pilot_Num
+   \   0001A0   0228         JNC     ??Charger_States_26
+     95                   Charger_State=SmartConfig_Inic; 
+   \   0001A2   E242....     MOV.B   #0x4, &Charger_State
+     96                break;  
+     97            }
+     98            
+     99            
+    100            
+    101            
+    102          }  
+   \                     ??Charger_States_26:
+   \   0001A6   3041         RET
+   \   0001A8                REQUIRE TACCR1
+   \   0001A8                REQUIRE WDTCTL
+   \   0001A8                REQUIRE TACCTL2
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine0:
+   \   000000   B012....     CALL    #ControlPilot_OFF
+   \   000004   3040....     BR      #stopCharge
+    103          
+    104          
+
+   \                                 In  segment CODE, align 2
+    105          void sendSmartConfigComplete()
+   \                     sendSmartConfigComplete:
+    106          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   3182         SUB.W   #0x8, SP
+    107              char i=0;
+    108              int res;
+    109              char answer[8]={1,0,0,0,0,0,0,0};
+   \   000004   0C41         MOV.W   SP, R12
+   \   000006   3E40....     MOV.W   #`?<Constant {1, 0, 0, 0, 0, 0, 0, 0}>`, R14
+   \   00000A   3D42         MOV.W   #0x8, R13
+   \   00000C   B012....     CALL    #?CopyMemoryBytes
+    110                 
+    111              do
+    112              {
+    113              
+    114                __delay_cycles(120000);
+   \                     ??sendSmartConfigComplete_0:
+   \   000010                ////////////// Start of 120000 cycles delay.
+   \   000010   0343         NOP
+   \   000012   3F403E9C     MOV.W   #0x9c3e, R15
+   \                     ??sendSmartConfigComplete_3:
+   \   000016   3F53         ADD.W   #0xffff, R15
+   \   000018   FE2F         JC      ??sendSmartConfigComplete_3
+   \   00001A                ////////////// End of delay code.
+    115                res=wlan_ioctl_statusget();
+    116              }while( (res!=WLAN_STATUS_CONNECTED));
+   \   00001A   B012....     CALL    #wlan_ioctl_statusget
+   \   00001E   3C900300     CMP.W   #0x3, R12
+   \   000022   F623         JNE     ??sendSmartConfigComplete_0
+    117              
+    118              sendMessage(answer);
+   \   000024   0C41         MOV.W   SP, R12
+   \   000026   B012....     CALL    #sendMessage
+   \   00002A   7A400A00     MOV.B   #0xa, R10
+   \                     ??sendSmartConfigComplete_1:
+   \   00002E   F2900600.... CMP.B   #0x6, &Charger_State
+   \   000034   0920         JNE     ??sendSmartConfigComplete_2
+    119              while((i<10)&(Charger_State==SmartConfig_Assign))
+    120              {    
+    121              sendMessage(answer);
+   \   000036   0C41         MOV.W   SP, R12
+   \   000038   B012....     CALL    #sendMessage
+    122              receiveMessage();
+   \   00003C   B012....     CALL    #receiveMessage
+    123              checkMessage();
+   \   000040   B012....     CALL    #checkMessage
+    124              i++;
+   \   000044   7A53         ADD.B   #0xff, R10
+    125              }
+   \   000046   F323         JNE     ??sendSmartConfigComplete_1
+    126               
+    127          }
+   \                     ??sendSmartConfigComplete_2:
+   \   000048   3152         ADD.W   #0x8, SP
+   \   00004A   3A41         POP.W   R10
+   \   00004C   3041         RET
+
+   \                                 In  segment DATA16_C, align 1, align-sorted
+   \                     `?<Constant {1, 0, 0, 0, 0, 0, 0, 0}>`:
+   \   000000   010000000000 DC8 1, 0, 0, 0, 0, 0, 0, 0
+   \            0000        
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   Charger_States
+        2   -> ControlPilot_OFF
+        2   -> ControlPilot_ON
+        2   -> StartSmartConfig
+        2   -> configureWatchdog
+        2   -> initDriver
+        2   -> sendSmartConfigComplete
+        2   -> set_Registers
+        2   -> startCharge
+        2   -> stopCharge
+     12   sendSmartConfigComplete
+       12   -> checkMessage
+       12   -> receiveMessage
+       12   -> sendMessage
+       12   -> wlan_ioctl_statusget
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       8  ?<Constant {1, 0, 0, 0, 0, 0, 0, 0}>
+       8  ?Subroutine0
+     424  Charger_States
+       2  TACCR1
+       2  TACCTL2
+       2  WDTCTL
+      78  sendSmartConfigComplete
+
+ 
+ 510 bytes in segment CODE
+   6 bytes in segment DATA16_AN
+   8 bytes in segment DATA16_C
+ 
+ 510 bytes of CODE  memory
+   8 bytes of CONST memory
+   0 bytes of DATA  memory (+ 6 bytes shared)
+
+Errors: none
+Warnings: none

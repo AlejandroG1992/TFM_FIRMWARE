@@ -1,0 +1,190 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           19/Oct/2016  09:36:02
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\Charger_Station.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\Charger_Station.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --no_code_motion --debug
+#        -D__MSP430AFE253__ -e --double=32 --dlib_config "C:\Archivos de
+#        programa\IAR Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Ohz --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Charger_Station.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\Charger_Station.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\Charger_Station.c
+      1          #include "board.h"
+      2          #include "ControlPilot.h"
+      3          #include "Analog_sampling.h"
+      4          #include "ControlPilot.h"
+      5          #include "Listener.h"
+      6          #include "SmartConfig.h"
+      7          #include "Wattmeter.h"
+      8          #include "Charger_Station.h"
+      9          #include "Wifi.h"
+     10          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x120
+   \   unsigned short volatile WDTCTL
+   \                     WDTCTL:
+   \   000000                DS8 2
+     11          
+     12          
+     13          
+     14          //*******************FSM*******************************************************
+     15          #define 	Idle            'A'
+     16          #define         Charging        'B'     
+     17          #define         SendData        'C'
+     18          #define         IPConfig        'D'
+     19          
+     20          void init_system(void);
+     21          char output_logic(void);
+     22          char state_logic(void);
+
+   \                                 In  segment DATA16_I, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_copy
+     23          unsigned char present_state = Idle; 
+   \                     present_state:
+   \   000000                DS8 1
+   \   000001                REQUIRE `?<Initializer for present_state>`
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     24          unsigned char flag_SendData=0;
+   \                     flag_SendData:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     25          unsigned char flag_IPConfiguration=0;
+   \                     flag_IPConfiguration:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     26          unsigned char flag_EnablePilot;
+   \                     flag_EnablePilot:
+   \   000000                DS8 1
+
+   \                                 In  segment DATA16_Z, align 1, align-sorted
+   \   000000                REQUIRE ?cstart_init_zero
+     27          unsigned char vehicleStatus=0;
+   \                     vehicleStatus:
+   \   000000                DS8 1
+     28          
+     29          
+     30          
+
+   \                                 In  segment CODE, align 2
+     31          void main(void) {
+   \                     main:
+     32              WDTCTL = WDTPW + WDTHOLD;
+   \   000000   B240805A2001 MOV.W   #0x5a80, &0x120
+     33              //InitSystems
+     34              initClk(); 
+   \   000006   B012....     CALL    #initClk
+     35              initDriver();
+   \   00000A   B012....     CALL    #initDriver
+     36              initADC();
+   \   00000E   B012....     CALL    #initADC
+     37              configureTimerPWM();
+   \   000012   B012....     CALL    #configureTimerPWM
+     38              
+     39              //Init Global Variables
+     40               powerSummation =0;
+   \   000016   8243....     MOV.W   #0x0, &powerSummation
+   \   00001A   8243....     MOV.W   #0x0, &powerSummation + 2
+   \   00001E   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   000022   8243....     MOV.W   #0x0, &powerSummation + 6
+     41               ControlPilot_OFF();
+   \   000026   B012....     CALL    #ControlPilot_OFF
+     42               stopCharge();
+   \   00002A   B012....     CALL    #stopCharge
+     43               TA0CCR1=0;  //No Power Available
+   \   00002E   82437401     MOV.W   #0x0, &0x174
+     44                    
+     45               __bis_SR_register(GIE);
+   \   000032   32D2         BIS.W   #0x8, SR
+     46                  
+     47              while(1){
+     48                receiveMessage();
+   \                     ??main_0:
+   \   000034   B012....     CALL    #receiveMessage
+     49                checkMessage();
+   \   000038   B012....     CALL    #checkMessage
+   \   00003C   FB3F         JMP     ??main_0
+   \   00003E                REQUIRE WDTCTL
+   \   00003E                REQUIRE TACCR1
+     50              };
+     51              
+     52              
+     53          }
+
+   \                                 In  segment DATA16_ID, align 1, align-sorted
+   \                     `?<Initializer for present_state>`:
+   \   000000   41           DC8 65
+     54          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   main
+        2   -> ControlPilot_OFF
+        2   -> checkMessage
+        2   -> configureTimerPWM
+        2   -> initADC
+        2   -> initClk
+        2   -> initDriver
+        2   -> receiveMessage
+        2   -> stopCharge
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       1  ?<Initializer for present_state>
+       2  TACCR1
+       2  WDTCTL
+       1  flag_EnablePilot
+       1  flag_IPConfiguration
+       1  flag_SendData
+      62  main
+       1  present_state
+       1  vehicleStatus
+
+ 
+ 62 bytes in segment CODE
+  4 bytes in segment DATA16_AN
+  1 byte  in segment DATA16_I
+  1 byte  in segment DATA16_ID
+  4 bytes in segment DATA16_Z
+ 
+ 62 bytes of CODE  memory
+  1 byte  of CONST memory
+  5 bytes of DATA  memory (+ 4 bytes shared)
+
+Errors: none
+Warnings: 1

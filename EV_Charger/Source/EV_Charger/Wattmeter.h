@@ -1,0 +1,1 @@
+void calculatePower(unsigned short voltage, unsigned short current);

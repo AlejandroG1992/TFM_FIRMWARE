@@ -1,0 +1,487 @@
+###############################################################################
+#
+# IAR C/C++ Compiler V6.20.1.931/W32 for MSP430           13/Dec/2016  10:36:43
+# Copyright 1996-2014 IAR Systems AB.
+# Network license: ISIGRUP (STD)
+#
+#    __rt_version  =  3
+#    __double_size =  32
+#    __reg_r4      =  free
+#    __reg_r5      =  free
+#    __pic         =  no
+#    __core        =  430
+#    Source file   =  Z:\EV_Charger\Source\EV_Charger\FlashMemory.c
+#    Command line  =  
+#        Z:\EV_Charger\Source\EV_Charger\FlashMemory.c -D
+#        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+#        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+#        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+#        --double=32 --dlib_config "C:\Archivos de programa\IAR
+#        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+#        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+#        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+#    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\FlashMemory.lst
+#    Object file   =  Z:\EV_Charger\EV_Charger\Debug\Obj\FlashMemory.r43
+#
+###############################################################################
+
+Z:\EV_Charger\Source\EV_Charger\FlashMemory.c
+      1          #include "Wifi.h" 
+      2          #include "Wattmeter.h" 
+      3          #include <msp430.h>
+
+   \                                 In  segment DATA16_AN, at 0x128
+   \   unsigned short volatile FCTL1
+   \                     FCTL1:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x12a
+   \   unsigned short volatile FCTL2
+   \                     FCTL2:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x12c
+   \   unsigned short volatile FCTL3
+   \                     FCTL3:
+   \   000000                DS8 2
+
+   \                                 In  segment DATA16_AN, at 0x174
+   \   unsigned short volatile TACCR1
+   \                     TACCR1:
+   \   000000                DS8 2
+      4          #include "board.h"
+      5          #include "Analog_sampling.h"
+      6          #include "ControlPilot.h"
+      7          #include "Charger_States.h"
+      8          #include "Listener.h"
+      9          #include "SmartConfig.h"
+     10          #include "Wattmeter.h"
+     11          #include "Wifi.h"
+     12          #include "FlashMemory.h"
+     13          #include "nvmem.h"
+     14          #include "Main.h"
+     15          #include <msp430.h>
+     16          
+
+   \                                 In  segment CODE, align 2
+     17          void set_Registers(char Identity)
+   \                     set_Registers:
+     18          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   4A4C         MOV.B   R12, R10
+     19            char  *Flash_ptr;
+     20             __bic_SR_register(GIE); 
+   \   000008   32C2         BIC.W   #0x8, SR
+     21                  
+     22              //Borrar bloque
+     23              FCTL2 = FWKEY + FSSEL_3 + FN4+FN2;           // SMCLK/20 for Flash Timing Generator
+   \   00000A   B240D4A52A01 MOV.W   #0xa5d4, &0x12a
+     24              Flash_ptr=(char  *) Direccion_state;
+     25              FCTL1 = FWKEY + ERASE;                  // Set Erase bit
+   \   000010   B24002A52801 MOV.W   #0xa502, &0x128
+     26              FCTL3 = FWKEY;                          // Clear Lock bit
+   \   000016   B24000A52C01 MOV.W   #0xa500, &0x12c
+     27              *Flash_ptr = 0;                         // Dummy write to erase Flash segment
+   \   00001C   C24300C0     MOV.B   #0x0, &0xc000
+     28              while((FCTL3 & BUSY));   
+   \                     ??set_Registers_0:
+   \   000020   92B32C01     BIT.W   #0x1, &0x12c
+   \   000024   FD2F         JC      ??set_Registers_0
+     29            
+     30            //Save state
+     31            Flash_ptr=(char  *) Direccion_state;
+     32            FCTL1 = FWKEY + WRT;
+   \   000026   3B4040A5     MOV.W   #0xa540, R11
+   \   00002A   824B2801     MOV.W   R11, &0x128
+     33            *Flash_ptr =Charger_State;
+   \   00002E   D242....00C0 MOV.B   &Charger_State, &0xc000
+   \   000034   B012....     CALL    #?Subroutine3
+     34            while((FCTL3 & BUSY));
+     35            
+     36            //Save Duty
+     37            Flash_ptr=(char  *) Direccion_duty;
+     38            FCTL1 = FWKEY + WRT;
+     39            *Flash_ptr =(TA0CCR1)&(0xFF); ;
+   \                     ??CrossCallReturnLabel_6:
+   \   000038   C24E01C0     MOV.B   R14, &0xc001
+   \   00003C   B012....     CALL    #?Subroutine3
+     40            while((FCTL3 & BUSY));
+     41            
+     42            Flash_ptr ++;
+     43            FCTL1 = FWKEY + WRT;
+     44            *Flash_ptr =(TA0CCR1>>8)&(0xFF);
+   \                     ??CrossCallReturnLabel_7:
+   \   000040   8E10         SWPB    R14
+   \   000042   C24E02C0     MOV.B   R14, &0xc002
+   \   000046   B012....     CALL    #?Subroutine4
+     45            while((FCTL3 & BUSY));  
+     46            
+     47            //Save EnergyConsumption
+     48            Flash_ptr=(char  *) Direccion_EnergyConsmpt;
+     49            FCTL1 = FWKEY + WRT;
+     50            *Flash_ptr =(powerSummation)&(0xFF);
+   \                     ??CrossCallReturnLabel_8:
+   \   00004A   3840....     MOV.W   #powerSummation, R8
+   \   00004E   E24803C0     MOV.B   @R8, &0xc003
+   \   000052   B012....     CALL    #?Subroutine4
+     51            while((FCTL3 & BUSY));
+     52            
+     53            Flash_ptr ++;
+     54            FCTL1 = FWKEY + WRT;
+     55            *Flash_ptr =(powerSummation>>8)&(0xFF);
+   \                     ??CrossCallReturnLabel_9:
+   \   000056   D248010004C0 MOV.B   0x1(R8), &0xc004
+   \   00005C   B012....     CALL    #?Subroutine4
+     56            while((FCTL3 & BUSY));  
+     57            
+     58             Flash_ptr ++;
+     59            FCTL1 = FWKEY + WRT;
+     60            *Flash_ptr =(powerSummation>>16)&(0xFF);
+   \                     ??CrossCallReturnLabel_10:
+   \   000060   5E480200     MOV.B   0x2(R8), R14
+   \   000064   C24E05C0     MOV.B   R14, &0xc005
+   \   000068   B012....     CALL    #?Subroutine4
+     61            while((FCTL3 & BUSY)); 
+     62            
+     63             Flash_ptr ++;
+     64            FCTL1 = FWKEY + WRT;
+     65            *Flash_ptr =(powerSummation>>24)&(0xFF);
+   \                     ??CrossCallReturnLabel_11:
+   \   00006C   1E480200     MOV.W   0x2(R8), R14
+   \   000070   8E10         SWPB    R14
+   \   000072   C24E06C0     MOV.B   R14, &0xc006
+   \   000076   B012....     CALL    #?Subroutine4
+     66            while((FCTL3 & BUSY)); 
+     67            
+     68             Flash_ptr ++;
+     69            FCTL1 = FWKEY + WRT;
+     70            *Flash_ptr =(powerSummation>>32)&(0xFF);
+   \                     ??CrossCallReturnLabel_12:
+   \   00007A   5E480400     MOV.B   0x4(R8), R14
+   \   00007E   C24E07C0     MOV.B   R14, &0xc007
+   \   000082   B012....     CALL    #?Subroutine4
+     71            while((FCTL3 & BUSY)); 
+     72            
+     73             Flash_ptr ++;
+     74            FCTL1 = FWKEY + WRT;
+     75            *Flash_ptr =(powerSummation>>40)&(0xFF);
+   \                     ??CrossCallReturnLabel_13:
+   \   000086   0F48         MOV.W   R8, R15
+   \   000088   3C4F         MOV.W   @R15+, R12
+   \   00008A   3D4F         MOV.W   @R15+, R13
+   \   00008C   3C4F         MOV.W   @R15+, R12
+   \   00008E   3F4F         MOV.W   @R15+, R15
+   \   000090   8F10         SWPB    R15
+   \   000092   8C10         SWPB    R12
+   \   000094   4CEF         XOR.B   R15, R12
+   \   000096   4CEF         XOR.B   R15, R12
+   \   000098   C24C08C0     MOV.B   R12, &0xc008
+   \   00009C   B012....     CALL    #?Subroutine4
+     76            while((FCTL3 & BUSY)); 
+     77            
+     78             Flash_ptr ++;
+     79            FCTL1 = FWKEY + WRT;
+     80            *Flash_ptr =(powerSummation>>48)&(0xFF);
+   \                     ??CrossCallReturnLabel_14:
+   \   0000A0   5E480600     MOV.B   0x6(R8), R14
+   \   0000A4   C24E09C0     MOV.B   R14, &0xc009
+   \   0000A8   B012....     CALL    #?Subroutine4
+     81            while((FCTL3 & BUSY)); 
+     82            
+     83             Flash_ptr ++;
+     84            FCTL1 = FWKEY + WRT;
+     85            *Flash_ptr =(powerSummation>>56)&(0xFF);
+   \                     ??CrossCallReturnLabel_15:
+   \   0000AC   3C48         MOV.W   @R8+, R12
+   \   0000AE   3D48         MOV.W   @R8+, R13
+   \   0000B0   3E48         MOV.W   @R8+, R14
+   \   0000B2   3F48         MOV.W   @R8+, R15
+   \   0000B4   8F10         SWPB    R15
+   \   0000B6   C24F0AC0     MOV.B   R15, &0xc00a
+   \   0000BA   B012....     CALL    #?Subroutine4
+     86            while((FCTL3 & BUSY)); 
+     87            
+     88            //Save Identity
+     89            Flash_ptr=(char  *) Direccion_Identifier;
+     90            FCTL1 = FWKEY + WRT;
+     91            *Flash_ptr =Identity;
+   \                     ??CrossCallReturnLabel_16:
+   \   0000BE   C24A0BC0     MOV.B   R10, &0xc00b
+     92            while((FCTL3 & BUSY));
+   \                     ??set_Registers_12:
+   \   0000C2   92B32C01     BIT.W   #0x1, &0x12c
+   \   0000C6   FD2F         JC      ??set_Registers_12
+     93            
+     94            
+     95              
+     96            FCTL3 = FWKEY + LOCK;                     // Reset LOCK bit
+   \   0000C8   B24010A52C01 MOV.W   #0xa510, &0x12c
+     97          
+     98            
+     99           
+    100          }
+   \   0000CE   3040....     BR      #?Epilogue3
+   \   0000D2                REQUIRE FCTL2
+   \   0000D2                REQUIRE FCTL1
+   \   0000D2                REQUIRE FCTL3
+   \   0000D2                REQUIRE TACCR1
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine4:
+   \   000000   92B32C01     BIT.W   #0x1, &0x12c
+   \   000004   FD2F         JC      ?Subroutine4
+   \   000006   824B2801     MOV.W   R11, &0x128
+   \   00000A   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine3:
+   \   000000   92B32C01     BIT.W   #0x1, &0x12c
+   \   000004   FD2F         JC      ?Subroutine3
+   \   000006   824B2801     MOV.W   R11, &0x128
+   \   00000A   1E427401     MOV.W   &0x174, R14
+   \   00000E   3041         RET
+    101          
+    102          
+
+   \                                 In  segment CODE, align 2
+    103          void read_Registers()
+   \                     read_Registers:
+    104          {
+   \   000000   0A12         PUSH.W  R10
+   \   000002   0B12         PUSH.W  R11
+   \   000004   0812         PUSH.W  R8
+   \   000006   0912         PUSH.W  R9
+    105            char  *Flash_ptr;
+    106            
+    107               
+    108            __bic_SR_register(GIE); 
+   \   000008   32C2         BIC.W   #0x8, SR
+    109            Flash_ptr=(char  *) (Direccion_state); 
+    110            Charger_State=(*Flash_ptr);
+   \   00000A   5E4200C0     MOV.B   &0xc000, R14
+   \   00000E   C24E....     MOV.B   R14, &Charger_State
+    111            
+    112            //First time
+    113            if (Charger_State==0xFF)
+   \   000012   7E93         CMP.B   #0xff, R14
+   \   000014   0D20         JNE     ??read_Registers_0
+    114            {
+    115               Charger_State=0;
+   \   000016   C243....     MOV.B   #0x0, &Charger_State
+    116               powerSummation=0;
+   \   00001A   8243....     MOV.W   #0x0, &powerSummation
+   \   00001E   B012....     CALL    #?Subroutine1
+    117               TA0CCR1=8000;
+   \                     ??CrossCallReturnLabel_4:
+   \   000022   B240401F7401 MOV.W   #0x1f40, &0x174
+    118               set_Registers(255);
+   \   000028   7C43         MOV.B   #0xff, R12
+   \   00002A   B012....     CALL    #set_Registers
+    119               return;
+   \   00002E   4A3C         JMP     ??read_Registers_1
+    120            }
+    121          
+    122            Flash_ptr=(char  *) (Direccion_duty); 
+    123            TA0CCR1=(*Flash_ptr);
+   \                     ??read_Registers_0:
+   \   000030   5F4201C0     MOV.B   &0xc001, R15
+   \   000034   824F7401     MOV.W   R15, &0x174
+    124            Flash_ptr ++;
+    125            TA0CCR1=TA0CCR1+((*Flash_ptr)<<8);
+   \   000038   5F4202C0     MOV.B   &0xc002, R15
+   \   00003C   8F10         SWPB    R15
+   \   00003E   825F7401     ADD.W   R15, &0x174
+    126            
+    127            Flash_ptr=(char  *) (Direccion_EnergyConsmpt+7); 
+    128            powerSummation=(*Flash_ptr);
+   \   000042   58420AC0     MOV.B   &0xc00a, R8
+   \   000046   8248....     MOV.W   R8, &powerSummation
+   \   00004A   B012....     CALL    #?Subroutine1
+   \                     ??CrossCallReturnLabel_5:
+   \   00004E   4948         MOV.B   R8, R9
+   \   000050   09E8         XOR.W   R8, R9
+   \   000052   8810         SWPB    R8
+   \   000054   5C4209C0     MOV.B   &0xc009, R12
+   \   000058   085C         ADD.W   R12, R8
+   \   00005A   0963         ADDC.W  #0x0, R9
+   \   00005C   8248....     MOV.W   R8, &powerSummation
+   \   000060   8249....     MOV.W   R9, &powerSummation + 2
+   \   000064   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   000068   8243....     MOV.W   #0x0, &powerSummation + 6
+    129            Flash_ptr --;
+    130            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+    131            Flash_ptr --;
+    132            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \   00006C   4A49         MOV.B   R9, R10
+   \   00006E   0AE9         XOR.W   R9, R10
+   \   000070   B012....     CALL    #??Subroutine7_0
+   \                     ??CrossCallReturnLabel_20:
+   \   000074   5C4208C0     MOV.B   &0xc008, R12
+   \   000078   085C         ADD.W   R12, R8
+   \   00007A   0963         ADDC.W  #0x0, R9
+   \   00007C   0A63         ADDC.W  #0x0, R10
+   \   00007E   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_17:
+   \   000082   8243....     MOV.W   #0x0, &powerSummation + 6
+    133            Flash_ptr --;
+    134            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \   000086   4B4A         MOV.B   R10, R11
+   \   000088   0BEA         XOR.W   R10, R11
+   \   00008A   B012....     CALL    #?Subroutine5
+   \                     ??CrossCallReturnLabel_21:
+   \   00008E   5C4207C0     MOV.B   &0xc007, R12
+   \   000092   B012....     CALL    #?Subroutine0
+    135            Flash_ptr --;
+    136            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \                     ??CrossCallReturnLabel_3:
+   \   000096   5C4206C0     MOV.B   &0xc006, R12
+   \   00009A   B012....     CALL    #?Subroutine0
+    137            Flash_ptr --;
+    138            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \                     ??CrossCallReturnLabel_2:
+   \   00009E   5C4205C0     MOV.B   &0xc005, R12
+   \   0000A2   B012....     CALL    #?Subroutine0
+    139            Flash_ptr --;
+    140            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \                     ??CrossCallReturnLabel_1:
+   \   0000A6   5C4204C0     MOV.B   &0xc004, R12
+   \   0000AA   B012....     CALL    #?Subroutine0
+    141            Flash_ptr --;
+    142            powerSummation=(powerSummation<<8)+(*Flash_ptr);
+   \                     ??CrossCallReturnLabel_0:
+   \   0000AE   5C4203C0     MOV.B   &0xc003, R12
+   \   0000B2   085C         ADD.W   R12, R8
+   \   0000B4   0963         ADDC.W  #0x0, R9
+   \   0000B6   0A63         ADDC.W  #0x0, R10
+   \   0000B8   0B63         ADDC.W  #0x0, R11
+   \   0000BA   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_18:
+   \   0000BE   824B....     MOV.W   R11, &powerSummation + 6
+    143            
+    144            __bis_SR_register(GIE);
+   \   0000C2   32D2         BIS.W   #0x8, SR
+    145            
+    146            
+    147            
+    148           }
+   \                     ??read_Registers_1:
+   \   0000C4   3040....     BR      #?Epilogue4
+   \   0000C8                REQUIRE TACCR1
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine6:
+   \   000000   8248....     MOV.W   R8, &powerSummation
+   \   000004   8249....     MOV.W   R9, &powerSummation + 2
+   \   000008   824A....     MOV.W   R10, &powerSummation + 4
+   \   00000C   3041         RET
+
+   \                                 In  segment CODE, align 2
+   \                     ?Subroutine1:
+   \   000000   8243....     MOV.W   #0x0, &powerSummation + 2
+   \   000004   8243....     MOV.W   #0x0, &powerSummation + 4
+   \   000008   8243....     MOV.W   #0x0, &powerSummation + 6
+   \   00000C   3041         RET
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine0:
+   \   000000   085C         ADD.W   R12, R8
+   \   000002   0963         ADDC.W  #0x0, R9
+   \   000004   0A63         ADDC.W  #0x0, R10
+   \   000006   0B63         ADDC.W  #0x0, R11
+   \   000008   B012....     CALL    #?Subroutine6
+   \                     ??CrossCallReturnLabel_19:
+   \   00000C   824B....     MOV.W   R11, &powerSummation + 6
+   \   000010   4BEA         XOR.B   R10, R11
+   \   000012   0BEA         XOR.W   R10, R11
+   \   000014   8B10         SWPB    R11
+   \   000016                REQUIRE ?Subroutine5
+   \   000016                // Fall through to label ?Subroutine5
+
+   \                                 In  segment CODE, align 2, keep-with-next
+   \                     ?Subroutine5:
+   \   000000   4AE9         XOR.B   R9, R10
+   \   000002   0AE9         XOR.W   R9, R10
+   \   000004   8A10         SWPB    R10
+   \   000006                REQUIRE ??Subroutine7_0
+   \   000006                // Fall through to label ??Subroutine7_0
+
+   \                                 In  segment CODE, align 2
+   \                     ??Subroutine7_0:
+   \   000000   49E8         XOR.B   R8, R9
+   \   000002   09E8         XOR.W   R8, R9
+   \   000004   8910         SWPB    R9
+   \   000006   78F3         AND.B   #0xff, R8
+   \   000008   8810         SWPB    R8
+   \   00000A   3041         RET
+    149          
+    150          
+
+   \                                 In  segment CODE, align 2
+    151          char read_Identifier()
+   \                     read_Identifier:
+    152          {
+    153            char  *Flash_ptr;
+    154            char Identity;
+    155            __bic_SR_register(GIE);   
+   \   000000   32C2         BIC.W   #0x8, SR
+    156            
+    157            Flash_ptr=(char  *) (Direccion_Identifier); 
+    158            Identity=(*Flash_ptr);
+   \   000002   5C420BC0     MOV.B   &0xc00b, R12
+    159            
+    160            __bis_SR_register(GIE);
+   \   000006   32D2         BIS.W   #0x8, SR
+    161            
+    162            
+    163            return(Identity);
+   \   000008   3041         RET
+    164          }
+    165          
+    166          
+    167          
+    168          
+    169          
+
+   Maximum stack usage in bytes:
+
+   CSTACK Function
+   ------ --------
+      2   read_Identifier
+     10   read_Registers
+       10   -> set_Registers
+      8   set_Registers
+
+
+   Segment part sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      12  ??Subroutine7_0
+      22  ?Subroutine0
+      14  ?Subroutine1
+      16  ?Subroutine3
+      12  ?Subroutine4
+       6  ?Subroutine5
+      14  ?Subroutine6
+       2  FCTL1
+       2  FCTL2
+       2  FCTL3
+       2  TACCR1
+      10  read_Identifier
+     200  read_Registers
+     210  set_Registers
+
+ 
+ 516 bytes in segment CODE
+   8 bytes in segment DATA16_AN
+ 
+ 516 bytes of CODE memory
+   0 bytes of DATA memory (+ 8 bytes shared)
+
+Errors: none
+Warnings: none

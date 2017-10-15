@@ -1,0 +1,155 @@
+///////////////////////////////////////////////////////////////////////////////
+//
+// IAR C/C++ Compiler V6.20.1.931/W32 for MSP430          13/Dec/2016  10:36:45
+// Copyright 1996-2014 IAR Systems AB.
+// Network license: ISIGRUP (STD)
+//
+//    __rt_version  =  3
+//    __double_size =  32
+//    __reg_r4      =  free
+//    __reg_r5      =  free
+//    __pic         =  no
+//    __core        =  430
+//    Source file   =  Z:\EV_Charger\Source\EV_Charger\Wattmeter.c
+//    Command line  =  
+//        Z:\EV_Charger\Source\EV_Charger\Wattmeter.c -D
+//        CC3000_UNENCRYPTED_SMART_CONFIG -lCN
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -lB
+//        Z:\EV_Charger\EV_Charger\Debug\List\ -o
+//        Z:\EV_Charger\EV_Charger\Debug\Obj\ --debug -D__MSP430AFE253__ -e
+//        --double=32 --dlib_config "C:\Archivos de programa\IAR
+//        Systems\Embedded Workbench 7.0\430\lib\dlib\dl430fn.h" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\CC3000HostDriver\ -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\HyperTerminal Driver\" -I
+//        "Z:\EV_Charger\EV_Charger\..\Source\\CC3000 Spi\" -I
+//        Z:\EV_Charger\EV_Charger\..\Source\inc\ -Oh --multiplier=16s
+//    List file     =  Z:\EV_Charger\EV_Charger\Debug\List\Wattmeter.s43
+//
+///////////////////////////////////////////////////////////////////////////////
+
+        NAME Wattmeter
+
+        RSEG CSTACK:DATA:SORT:NOROOT(0)
+
+        EXTERN ?Epilogue5
+        EXTERN _Mul64i
+        EXTERN ?longjmp_r4
+        EXTERN ?longjmp_r5
+        EXTERN ?setjmp_r4
+        EXTERN ?setjmp_r5
+
+        PUBWEAK ?setjmp_save_r4
+        PUBWEAK ?setjmp_save_r5
+        PUBLIC calculatePower
+
+        EXTERN powerSummation
+
+// Z:\EV_Charger\Source\EV_Charger\Wattmeter.c
+//    1 #include "Analog_sampling.h"
+//    2 #include "ControlPilot.h"
+//    3 #include "Listener.h"
+//    4 #include "SmartConfig.h"
+//    5 #include "Wattmeter.h"
+//    6 #include "Wifi.h"
+//    7 #include "Main.h"
+//    8 #include <msp430.h>
+//    9 
+//   10 //***********************PILOT AND POWER MEAS**********************************
+//   11 //#define KP 0.0000094432777311898429285396229137072     //Constante de proporcionalidad entre la energía real (Wh) y el valor calculado
+//   12 
+//   13 //******************************************************************************
+//   14 
+//   15 
+//   16 
+//   17 
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+//   18 void calculatePower(unsigned short voltage, unsigned short current)
+calculatePower:
+//   19 {    
+        PUSH.W  R10
+        PUSH.W  R11
+        PUSH.W  R8
+        PUSH.W  R9
+        PUSH.W  R6
+        MOV.W   R13, R6
+//   20       signed long long longVoltage,longCurrent,power; 
+//   21       //P1OUT |= (BIT1);
+//   22    
+//   23       
+//   24       if(voltage<32768)
+        CMP.W   #0x8000, R12
+        JC      ??calculatePower_0
+//   25       { 
+//   26         longVoltage=voltage;
+        MOV.W   #0x0, R13
+        MOV.W   #0x0, R14
+        MOV.W   #0x0, R15
+        JMP     ??calculatePower_1
+//   27       }
+//   28       else
+//   29       {
+//   30         longVoltage=0xFFFFFFFFFFFF0000 | ((signed long) voltage);
+??calculatePower_0:
+        MOV.W   #0xffff, R13
+        MOV.W   #0xffff, R14
+        MOV.W   #0xffff, R15
+//   31       }
+//   32 
+//   33       if(current<32768)
+??calculatePower_1:
+        CMP.W   #0x8000, R6
+        JC      ??calculatePower_2
+//   34       {
+//   35 
+//   36         longCurrent=current;
+        MOV.W   R6, R8
+        MOV.W   #0x0, R9
+        MOV.W   #0x0, R10
+        MOV.W   #0x0, R11
+        JMP     ??calculatePower_3
+//   37         
+//   38          
+//   39       }
+//   40       else
+//   41       {
+//   42         longCurrent=0xFFFFFFFFFFFF0000 | ((signed long) current);
+??calculatePower_2:
+        MOV.W   #0xffff, R9
+        MOV.W   #0xffff, R10
+        MOV.W   #0xffff, R11
+        MOV.W   R6, R8
+//   43         
+//   44       }
+//   45       power=longVoltage*longCurrent;
+//   46       powerSummation = powerSummation + power;   
+??calculatePower_3:
+        CALL    #_Mul64i
+        ADD.W   R12, &powerSummation
+        ADDC.W  R13, &powerSummation + 2
+        ADDC.W  R14, &powerSummation + 4
+        ADDC.W  R15, &powerSummation + 6
+//   47      //  P1OUT &= ~(BIT1);
+//   48        
+//   49 }
+        BR      #?Epilogue5
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r4:
+        REQUIRE ?setjmp_r4
+        REQUIRE ?longjmp_r4
+
+        RSEG CODE:CODE:REORDER:NOROOT(1)
+?setjmp_save_r5:
+        REQUIRE ?setjmp_r5
+        REQUIRE ?longjmp_r5
+
+        END
+//   50 
+// 
+// 80 bytes in segment CODE
+// 
+// 80 bytes of CODE memory
+//
+//Errors: none
+//Warnings: none

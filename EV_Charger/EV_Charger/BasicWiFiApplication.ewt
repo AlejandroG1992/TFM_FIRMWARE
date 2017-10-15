@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project>
+  <fileVersion>2</fileVersion>
+  <configuration>
+    <name>Debug</name>
+    <toolchain>
+      <name>MSP430</name>
+    </toolchain>
+    <debug>1</debug>
+  </configuration>
+  <configuration>
+    <name>Release</name>
+    <toolchain>
+      <name>MSP430</name>
+    </toolchain>
+    <debug>0</debug>
+  </configuration>
+  <group>
+    <name>Library</name>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\CC3000 Host Driver.r43</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\CC3000_Spi.r43</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\Debug\Exe\HyperTerminalDriver.r43</name>
+    </file>
+  </group>
+  <file>
+    <name>$PROJ_DIR$\..\Source\BasicWiFi Application\application_version.h</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\BasicWiFi Application\basic_wifi_application.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\BasicWiFi Application\board.c</name>
+  </file>
+  <file>
+    <name>$PROJ_DIR$\..\Source\BasicWiFi Application\board.h</name>
+  </file>
+</project>
+
+
